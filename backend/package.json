@@ -1,0 +1,37 @@
+{
+  "name": "Bib_Oku_DBness-backend",
+  "version": "1.0.0",
+  "description": "Backend para o painel administrativo Bib_Oku_DBness",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "db:init": "node database/init.js",
+    "db:reset": "node database/reset.js",
+    "db:test": "node database/test-connection.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "Bib_Oku_DBness",
+    "admin",
+    "backend",
+    "api"
+  ],
+  "author": "Bib_Oku_DBness Team",
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "fs": "^0.0.1-security",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "path": "^0.12.7",
+    "pg": "^8.11.3",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}

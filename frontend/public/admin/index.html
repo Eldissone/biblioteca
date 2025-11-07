@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Okukulanaua Admin - Painel de Controle</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?display=swap&family=Noto+Sans:wght@400;500;700;900&family=Plus+Jakarta+Sans:wght@400;500;700;800">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="admin-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1 class="logo">Biblioteca Admin</h1>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="#" class="nav-link active" data-page="dashboard">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" />
+                            </svg>
+                            Dashboard
+                        </a></li>
+                    <li><a href="#" class="nav-link" data-page="books">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path
+                                    d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z" />
+                            </svg>
+                            Books
+                        </a></li>
+                    <li><a href="#" class="nav-link" data-page="loans">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path
+                                    d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z" />
+                            </svg>
+                            emprestimo
+                        </a></li>
+                    <li><a href="#" class="nav-link" data-page="readers">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path
+                                    d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A1.5 1.5 0 0 0 18.54 8H17c-.8 0-1.54.37-2.01 1l-3.7 3.7c-.28.28-.44.66-.44 1.06V20h2v-6.24L16.5 18H20zM12.5 11.5c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5S11 9.17 11 10s.67 1.5 1.5 1.5zM5.5 6c1.11 0 2-.89 2-2s-.89-2-2-2-2 .89-2 2 .89 2 2 2zm2 16v-7H9V9c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v6h1.5v7h4z" />
+                            </svg>
+                            Leitores
+                        </a></li>
+                    <li><a href="#" class="nav-link" data-page="analytics">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path
+                                    d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z" />
+                            </svg>
+                            Analytics
+                        </a></li>
+                    <li><a href="#" class="nav-link" data-page="settings">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path
+                                    d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z" />
+                            </svg>
+                            Configurações
+                        </a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-header">
+                <div class="header-left">
+                    <h2 id="page-title">Dashboard</h2>
+                </div>
+                <div class="header-right">
+                    <div class="admin-profile">
+                        <span>Admin</span>
+                        <button class="logout-btn">Sair</button>
+                    </div>
+                </div>
+            </header>
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+                <button id="refresh-stats-btn" class="btn btn-secondary">Atualizar</button>
+                <div id="stats-spinner" style="width:20px; height:20px; border:3px solid #eee; border-top-color:#ff8200; border-radius:50%; display:none; animation:spin 1s linear infinite"></div>
+            </div>
+
+            <style>
+                @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+            </style>
+
+            <!-- Dashboard Page -->
+            <div id="dashboard-page" class="page-content active">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                <path
+                                    d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z" />
+                            </svg>
+                        </div>
+                            <div class="stat-info">
+                                <h3>Total de Livros</h3>
+                                <p id="stat-total-books" class="stat-number">0</p>
+                            </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-6h2v6zm0-8h-2V7h2v4z" />
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Reservas Ativas</h3>
+                            <p id="stat-reservations" class="stat-number">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                <path
+                                    d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z" />
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Empréstimos Ativos</h3>
+                            <p id="stat-active-loans" class="stat-number">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                <path
+                                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Livros Emprestados</h3>
+                            <p id="stat-borrowed-books" class="stat-number">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                <path
+                                    d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A1.5 1.5 0 0 0 18.54 8H17c-.8 0-1.54.37-2.01 1l-3.7 3.7c-.28.28-.44.66-.44 1.06V20h2v-6.24L16.5 18H20z" />
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Leitores Ativos</h3>
+                            <p id="stat-total-readers" class="stat-number">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-grid">
+                    <div class="recent-orders">
+                        <h3>Últimos Empréstimos</h3>
+                        <div class="order-list">
+                            <div class="order-item">
+                                <div class="order-info">
+                                    <span class="order-id">#E123</span>
+                                    <span class="order-customer">Maria Silva</span>
+                                    <span class="order-amount">"O Primo Basílio"</span>
+                                </div>
+                                <span class="order-status pending">Em aberto</span>
+                            </div>
+                            <div class="order-item">
+                                <div class="order-info">
+                                    <span class="order-id">#E124</span>
+                                    <span class="order-customer">João Santos</span>
+                                    <span class="order-amount">"Dom Quixote"</span>
+                                </div>
+                                <span class="order-status completed">Devolvido</span>
+                            </div>
+                            <div class="order-item">
+                                <div class="order-info">
+                                    <span class="order-id">#E125</span>
+                                    <span class="order-customer">Ana Costa</span>
+                                    <span class="order-amount">"A Montanha Mágica"</span>
+                                </div>
+                                <span class="order-status processing">Em andamento</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="top-borrowed">
+                        <h3>Top Livros Mais Emprestados</h3>
+                        <div class="chart-container" style="display:flex; gap:16px; align-items:flex-start;">
+                            <div style="width:50%; height:220px;">
+                                <canvas id="topBooksChart" width="400" height="200"></canvas>
+                            </div>
+                            <div style="flex:1">
+                                <ul id="topBooksList" class="product-list" style="list-style:none; padding:0; margin:0;"></ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="trends" style="margin-top:20px;">
+                        <h3>Tendência - Últimos 14 dias</h3>
+                        <div style="height:260px;">
+                            <canvas id="trendsChart" width="800" height="260"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="top-products">
+                        <h3>Livros Mais Emprestados</h3>
+                        <div class="product-list">
+                            <div class="product-item">
+                                <img src="https://covers.openlibrary.org/b/id/8234156-L.jpg" alt="Livro 1">
+                                <div class="product-info">
+                                    <h4>1984</h4>
+                                    <p>George Orwell</p>
+                                </div>
+                            </div>
+                            <div class="product-item">
+                                <img src="https://covers.openlibrary.org/b/id/240727-L.jpg" alt="Livro 2">
+                                <div class="product-info">
+                                    <h4>Os Maias</h4>
+                                    <p>Eça de Queirós</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Books Page -->
+            <div id="books-page" class="page-content">
+                <div class="page-header">
+                    <h2>Gerenciar Livros</h2>
+                    <button class="btn btn-primary" id="add-book-btn">Adicionar Livro</button>
+                </div>
+
+                <div class="products-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Capa</th>
+                                <th>Título</th>
+                                <th>Autor</th>
+                                <th>Ano</th>
+                                <th>Categoria</th>
+                                <th>Descrição</th>
+                                <th>PDF</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="books-tbody">
+                            <!-- Livros serão carregados aqui via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+
+            <!-- Loans Page -->
+            <div id="loans-page" class="page-content">
+                <div class="page-header">
+                    <h2>Gerenciar Empréstimos</h2>
+                </div>
+
+                <div class="orders-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Leitor</th>
+                                <th>Livro</th>
+                                <th>Status</th>
+                                <th>Data Empréstimo</th>
+                                <th>Data Devolução</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="loans-tbody">
+                            <!-- Empréstimos serão carregados aqui -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Readers Page -->
+            <div id="readers-page" class="page-content">
+                <div class="page-header">
+                    <h2>Gerenciar Leitores</h2>
+                </div>
+
+                <div class="customers-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Email</th>
+                                <th>Telefone</th>
+                                <th>Livros Emprestados</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="readers-tbody">
+                            <!-- Leitores serão carregados aqui -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Suggestions Page -->
+            <div id="suggestions-page" class="page-content">
+                <div class="page-header">
+                    <h2>Sugestões de Livros</h2>
+                </div>
+
+                <div class="suggestions-list" id="suggestions-tbody">
+                    <!-- Sugestões aparecerão aqui -->
+                </div>
+            </div>
+
+
+            <!-- Add Book Modal -->
+            <div id="add-book-modal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Adicionar Livro</h3>
+                        <button id="close-book-modal" class="close-btn">&times;</button>
+                    </div>
+                    <form id="add-book-form" enctype="multipart/form-data">
+                        <div class="form-group">
+                            <label>Título do Livro</label>
+                            <input type="text" name="title" required class="form-input">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Autor</label>
+                            <input type="text" name="author" class="form-input">
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Categoria</label>
+                                <input type="text" name="category" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label>Disponibilidade</label>
+                                <input type="checkbox" name="is_active" checked>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Capa do Livro</label>
+                            <input type="file" name="cover_image" accept="image/*" class="form-input">
+                            <small class="form-help">Somente imagens JPG ou PNG (máx. 5MB)</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Upload do PDF do Livro</label>
+                            <input type="file" name="pdf_file" accept="application/pdf" class="form-input">
+                            <small class="form-help">Somente arquivos PDF (máx. 20MB)</small>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="button" id="close-book-modal" class="btn btn-secondary">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Adicionar Livro</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div id="edit-book-modal" class="modal">
+                <div class="modal-content">
+                    <span id="close-edit-modal" class="close">&times;</span>
+                    <h2>Editar Livro</h2>
+                    <form id="edit-book-form">
+                        <input type="hidden" id="edit-book-id">
+
+                        <label>Título</label>
+                        <input type="text" id="edit-book-title" required>
+
+                        <label>Autor</label>
+                        <input type="text" id="edit-book-author">
+
+                        <label>Ano</label>
+                        <input type="number" id="edit-book-year">
+
+                        <label>Categoria</label>
+                        <input type="text" id="edit-book-category">
+
+                        <label>Descrição</label>
+                        <textarea id="edit-book-description"></textarea>
+
+                        <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                    </form>
+                </div>
+            </div>
+
+
+
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <script src="admin.js"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#ff8200" />
+  <meta name="description" content="Okukulanaua" />
+  <meta name="keywords" content="biblioteca" />
+  <meta property="og:title" content="Okukulanaua " />
+  <meta property="og:description" content="biblioteca" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://Okukulanaua.com.ao" />
+
+  <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="" />
+  <link rel="stylesheet" as="style" onload="this.rel='stylesheet'"
+    href="https://fonts.googleapis.com/css2?display=swap&amp;family=Noto+Sans%3Awght%40400%3B500%3B700%3B900&amp;family=Plus+Jakarta+Sans%3Awght%40400%3B500%3B700%3B800" />
+  <title>Okukulanaua</title>
+  <link rel="icon" href="favicon.ico" />
+  <link rel="stylesheet" href="src/styles/index.css" />
+  <link rel="stylesheet" href="src/styles/style.css" />
+
+  <script src="src/js/script.js"></script>
+
+  <style>
+    .hidden {
+      display: none;
+    }
+
+    .active {
+      display: flex !important;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="relative flex size-full min-h-screen flex-col bg-[#fcfaf8] group/design-root overflow-x-hidden"
+    style='font-family: "Plus Jakarta Sans", "Noto Sans", sans-serif;'>
+    <div class="layout-container flex h-full grow flex-col">
+      <header class="flex items-center justify-between whitespace-nowrap border-b border-b-[#f3ece7] px-10 py-3"
+        role="banner">
+        <div class="flex items-center gap-4 text-[#1b130d] logo">
+          <img src="./public/assets/logos/Okukulanaua_Logo.png" alt="">
+          <!-- <h1 class="text-[#1b130d] text-[32px] cursor-pointer font-bold leading-tight tracking-[-0.015em]">
+            Okukulanaua
+          </h1> -->
+        </div>
+        <nav class="flex flex-1 justify-end gap-8" role="navigation" aria-label="Menu principal">
+          <div class="flex items-center gap-9">
+            <a class="text-[#1b130d] text-sm font-medium leading-normal hover:text-[#ff8200] transition-colors"
+              href="index.html" aria-current="page">Home</a>
+            <a class="text-[#1b130d] text-sm font-medium leading-normal hover:text-[#ff8200] transition-colors"
+              href="biblioteca.html">biblioteca</a>
+           
+            <a class="text-[#1b130d] text-sm font-medium leading-normal hover:text-[#ff8200] transition-colors"
+              href="#">Comunidade</a>
+          </div>
+          <div class="flex gap-2" id="user-actions">
+            <!-- Botões serão carregados dinamicamente -->
+          </div>
+          <div
+            class="hidden h-12 bg-[#ff8200] rounded-full cursor-pointer flex items-center justify-center text-white font-bold text-lg"
+            id="userInitial">
+            E
+          </div>
+        </nav>
+      </header>
+
+      <div class="px-20 flex flex-1 justify-center py-5">
+        <div class="layout-content-container flex flex-col max-w-[90%] flex-1">
+          <div class="@container">
+            <div class="@[480px]:p-4">
+              <div
+                class="flex min-h-[500px] flex-col gap-6 bg-cover bg-center bg-no-repeat @[480px]:gap-8 @[480px]:rounded-xl items-center justify-center p-4"
+                style='background-image: linear-gradient(rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.4) 100%), url("./public/assets/img/b1.jpg");'>
+                <div class="flex flex-col gap-2 text-center">
+                  <h2
+                    class="text-white text-sm font-normal leading-normal @[480px]:text-4xl @[480px]:font-normal @[480px]:leading-normal">
+                    Bem vindo(a) a
+                  </h2>
+                  <h1
+                    class="text-white text-4xl font-black leading-tight tracking-[-0.033em] @[480px]:text-5xl @[480px]:font-black @[480px]:leading-tight @[480px]:tracking-[-0.033em]">
+                    Biblioteca Okukulanaua
+                  </h1>
+                  <h2
+                    class="text-white text-sm font-normal leading-normal @[480px]:text-4xl @[480px]:font-normal @[480px]:leading-normal">
+                    Crescer bem, faz bem
+                  </h2>
+                </div>
+                <button
+                  class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-4 @[480px]:h-12 @[480px]:px-5 bg-[#ff8200] text-[#1b130d] text-sm font-bold leading-normal tracking-[0.015em] @[480px]:text-base @[480px]:font-bold @[480px]:leading-normal @[480px]:tracking-[0.015em]">
+                  <span class="truncate">Ler agora</span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <h2 class="text-[#1b130d] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">
+            Em Destaque</h2>
+          <!-- Sessão 1: books em Destaque -->
+          <div
+            class="flex overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden mb-6">
+            <div class="flex items-stretch p-4 gap-3 min-w-full" id="featured-products">
+              <!-- books serão carregados dinamicamente aqui -->
+              <div class="flex items-center justify-center h-32 text-[#6d2306]">
+                <p>Carregando books...</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sessão 2: Novidades -->
+          <h2 class="text-[#1b130d] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">
+            Novidades</h2>
+          <div
+            class="flex overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div class="flex items-stretch p-4 gap-3 min-w-full" id="new-products">
+              <!-- books serão carregados dinamicamente aqui -->
+              <div class="flex items-center justify-center h-32 text-[#6d2306]">
+                <p>Carregando books...</p>
+              </div>
+            </div>
+          </div>
+
+
+
+        </div>
+      </div>
+
+      <footer class="flex justify-center">
+        <div class="flex max-w-[960px] flex-1 flex-col">
+          <footer class="flex flex-col gap-6 px-5 py-10 text-center @container">
+            <div class="flex flex-wrap items-center justify-center gap-6 @[480px]:flex-row @[480px]:justify-around">
+              <a class="text-[#6d2306] text-base font-normal leading-normal min-w-40" href="#">Sobre-nós</a>
+              <a class="text-[#6d2306] text-base font-normal leading-normal min-w-40" href="#">Contactos</a>
+              <a class="text-[#6d2306] text-base font-normal leading-normal min-w-40" href="#">FAQ</a>
+              <a class="text-[#6d2306] text-base font-normal leading-normal min-w-40" href="#">Politicas de
+                privacidade</a>
+              <a class="text-[#6d2306] text-base font-normal leading-normal min-w-40" href="#">Termos e Serviços</a>
+            </div>
+            <div class="flex flex-wrap justify-center gap-4">
+              <a href="#">
+                <div class="text-[#870493]" data-icon="InstagramLogo" data-size="24px" data-weight="regular">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor"
+                    viewBox="0 0 256 256">
+                    <path
+                      d="M128,80a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160ZM176,24H80A56.06,56.06,0,0,0,24,80v96a56.06,56.06,0,0,0,56,56h96a56.06,56.06,0,0,0,56-56V80A56.06,56.06,0,0,0,176,24Zm40,152a40,40,0,0,1-40,40H80a40,40,0,0,1-40-40V80A40,40,0,0,1,80,40h96a40,40,0,0,1,40,40ZM192,76a12,12,0,1,1-12-12A12,12,0,0,1,192,76Z">
+                    </path>
+                  </svg>
+                </div>
+              </a>
+              <a href="#">
+                <div class="text-[#5cc7d0]" data-icon="FacebookLogo" data-size="24px" data-weight="regular">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor"
+                    viewBox="0 0 256 256">
+                    <path
+                      d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm8,191.63V152h24a8,8,0,0,0,0-16H136V112a16,16,0,0,1,16-16h16a8,8,0,0,0,0-16H152a32,32,0,0,0-32,32v24H96a8,8,0,0,0,0,16h24v63.63a88,88,0,1,1,16,0Z">
+                    </path>
+                  </svg>
+                </div>
+              </a>
+              
+            </div>
+            <p class="text-[#6d2306] text-base font-normal leading-normal">@2025 Okukulanaua. todos os direitos
+              reservados.</p>
+          </footer>
+        </div>
+      </footer>
+
+    </div>
+  </div>
+
+
+  <!-- Modal de Checkout -->
+  <div id="checkout-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-1000 hidden">
+    <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold text-[#1b130d]">Pedido de emprestimo</h3>
+        <button onclick="document.getElementById('checkout-modal').classList.remove('active')"
+          class="text-gray-500 hover:text-gray-700">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-[#1b130d] mb-2">Método de Pagamento *</label>
+          <select id="payment-method"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#ff8200]">
+            <option value="">Selecione...</option>
+            <option value="Cartão de Crédito">Cartão de Crédito</option>
+            <option value="Cartão de Débito">Cartão de Débito</option>
+            <option value="Dinheiro">Dinheiro</option>
+            <option value="Transferência Bancária">Transferência Bancária</option>
+            <option value="MBWay">MBWay</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-[#1b130d] mb-2">Endereço de Entrega</label>
+          <textarea id="shipping-address" rows="3"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#ff8200]"
+            placeholder="Deixe em branco para usar o endereço cadastrado"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-[#1b130d] mb-2">Observações</label>
+          <textarea id="order-notes" rows="2"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#ff8200]"
+            placeholder="Observações opcionais..."></textarea>
+        </div>
+
+        <div class="flex gap-3 pt-4">
+          <button onclick="document.getElementById('checkout-modal').classList.remove('active')"
+            class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">
+            Cancelar
+          </button>
+          <button onclick="processOrder()"
+            class="flex-1 px-4 py-2 bg-[#ff8200] text-white rounded-md hover:bg-[#d67a3a]">
+            Finalizar Pedido
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Sucesso -->
+  <div id="success-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4 text-center">
+      <div class="mb-4">
+        <svg class="w-16 h-16 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+      </div>
+
+      <h3 class="text-lg font-bold text-[#1b130d] mb-2">Pedido Criado com Sucesso!</h3>
+      <p class="text-gray-600 mb-4">Seu pedido foi processado e está sendo preparado.</p>
+
+      <div class="bg-gray-50 rounded-lg p-4 mb-4">
+        <p class="text-sm text-gray-600">Número do Pedido:</p>
+        <p class="text-lg font-bold text-[#1b130d]" id="order-number"></p>
+        <p class="text-sm text-gray-600 mt-2">Total:</p>
+        <p class="text-lg font-bold text-[#ff8200]" id="order-total"></p>
+      </div>
+
+      <button onclick="document.getElementById('success-modal').classList.remove('active')"
+        class="w-full px-4 py-2 bg-[#ff8200] text-white rounded-md hover:bg-[#d67a3a]">
+        Continuar no feed
+      </button>
+    </div>
+  </div>
+
+
+
+  <!-- Modal de Compartilhamento -->
+  <div id="shareModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold text-[#1b130d]">Compartilhar Avaliação</h3>
+        <button onclick="closeModal('shareModal')" class="text-gray-500 hover:text-gray-700">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-[#1b130d] mb-2">Link da Avaliação</label>
+          <div class="flex gap-2">
+            <input type="text" id="shareLink" readonly
+              class="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+              value="https://Okukulanaua.com.ao/reviews/123">
+            <button onclick="copyShareLink()" class="px-4 py-2 bg-[#ff8200] text-white rounded-md hover:bg-[#d67a3a]">
+              Copiar
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-[#1b130d] mb-3">Compartilhar via</label>
+          <div class="flex gap-3">
+            <button onclick="shareToSocial('facebook')"
+              class="flex-1 p-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center justify-center gap-2">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path
+                  d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+              </svg>
+              Facebook
+            </button>
+            <button onclick="shareToSocial('twitter')"
+              class="flex-1 p-3 bg-blue-400 text-white rounded-md hover:bg-blue-500 flex items-center justify-center gap-2">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path
+                  d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" />
+              </svg>
+              Twitter
+            </button>
+            <button onclick="shareToSocial('whatsapp')"
+              class="flex-1 p-3 bg-green-500 text-white rounded-md hover:bg-green-600 flex items-center justify-center gap-2">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path
+                  d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488" />
+              </svg>
+              WhatsApp
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="./public/assets/js/script.js"></script>
+</body>
+
+</html>

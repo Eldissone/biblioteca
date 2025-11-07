@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities; 
+
+.product {
+    height: 180px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.product2 {
+    height: 140px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+img {
+    display: block;
+    object-fit: contain;
+}
