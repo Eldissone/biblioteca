@@ -2,9 +2,9 @@
 let userToken = localStorage.getItem('userToken');
 let userData = null;
 try {
-  userData = JSON.parse(localStorage.getItem('userData'));
+    userData = JSON.parse(localStorage.getItem('userData'));
 } catch (e) {
-  userData = null;
+    userData = null;
 }
 
 // Global variables
@@ -52,7 +52,7 @@ function loadUserActions() {
 // Load all books from backend
 async function loadBooks() {
     try {
-    const response = await fetch(`${API_BASE}/api/public/books`);
+        const response = await fetch(`${API_BASE}/api/public/books`);
         if (response.ok) {
             allBooks = await response.json();
             filteredBooks = [...allBooks];
@@ -68,28 +68,28 @@ async function loadBooks() {
 
 // Display books
 function displayBooks() {
-        const booksGrid = document.getElementById('productsGrid'); // id presente em biblioteca.html
-        if (!booksGrid) return console.error('Elemento #productsGrid não encontrado na página.');
-        booksGrid.innerHTML = '';
+    const booksGrid = document.getElementById('productsGrid'); // id presente em biblioteca.html
+    if (!booksGrid) return console.error('Elemento #productsGrid não encontrado na página.');
+    booksGrid.innerHTML = '';
 
-        if (filteredBooks.length === 0) {
-                booksGrid.innerHTML = `
+    if (filteredBooks.length === 0) {
+        booksGrid.innerHTML = `
                     <div class="col-span-full text-center py-8">
                         <p class="text-[#9a6c4c] text-lg">Nenhum livro encontrado</p>
                     </div>
                 `;
-                return;
-        }
+        return;
+    }
 
-        filteredBooks.forEach(book => {
-                const coverPath = book.cover_image || book.cover || '/uploads/default-book.jpg';
-                const pdfPath = book.pdf_file || book.pdf || null;
-            const coverUrl = coverPath.startsWith('http') ? coverPath : `${API_BASE}${coverPath}`;
-            const pdfUrl = pdfPath ? (pdfPath.startsWith('http') ? pdfPath : `${API_BASE}${pdfPath}`) : null;
+    filteredBooks.forEach(book => {
+        const coverPath = book.cover_image || book.cover || '/uploads/default-book.jpg';
+        const pdfPath = book.pdf_file || book.pdf || null;
+        const coverUrl = coverPath.startsWith('http') ? coverPath : `${API_BASE}${coverPath}`;
+        const pdfUrl = pdfPath ? (pdfPath.startsWith('http') ? pdfPath : `${API_BASE}${pdfPath}`) : null;
 
-                const bookCard = document.createElement('div');
-                bookCard.className = 'flex flex-col items-center bg-white rounded-lg shadow p-3 min-w-[180px]';
-                bookCard.innerHTML = `
+        const bookCard = document.createElement('div');
+        bookCard.className = 'flex flex-col items-center bg-white rounded-lg shadow p-3 min-w-[180px]';
+        bookCard.innerHTML = `
                     <div class="w-32 h-44 bg-center bg-no-repeat bg-cover rounded-md mb-2"
                              style="background-image: url('${coverUrl}')"></div>
                     <h3 class="text-[#1b130d] text-sm font-bold truncate">${book.title}</h3>
@@ -99,14 +99,14 @@ function displayBooks() {
                         <button onclick="downloadBook('${escapeJs(book.title)}','${pdfUrl}')" class="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-[#0d783a]">Download</button>
                     </div>
                 `;
-                booksGrid.appendChild(bookCard);
-        });
+        booksGrid.appendChild(bookCard);
+    });
 }
 
 // Pequena função utilitária para escapar strings dentro de atributos inline JS
 function escapeJs(str) {
-        if (!str) return '';
-        return String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
+    if (!str) return '';
+    return String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
 }
 
 // View book details

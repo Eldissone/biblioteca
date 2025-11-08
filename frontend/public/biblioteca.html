@@ -15,11 +15,10 @@
   <link rel="stylesheet" as="style" onload="this.rel='stylesheet'"
     href="https://fonts.googleapis.com/css2?display=swap&family=Noto+Sans:wght@400;500;700;900&family=Plus+Jakarta+Sans:wght@400;500;700;800">
 
-  <title>Biblioteca Okukulanaua</title>
+  <title>Biblioteca-Okukulanaua</title>
   <link rel="icon" type="image/x-icon" href="../public/assets/logos/favicon.ico">
   <link rel="stylesheet" href="../src/styles/index.css">
   <link rel="stylesheet" href="../src/styles/style.css">
-
   <script src="../src/js/script.js" defer></script>
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <style>
@@ -45,6 +44,8 @@
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
       z-index: 10;
       min-width: 180px;
+      max-height: 300px;
+      overflow-y: auto;
     }
 
     .filter-option {
@@ -60,6 +61,40 @@
     .filter-option:last-child {
       border-bottom: none;
     }
+
+    .book-card {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .book-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .pagination-btn {
+      padding: 8px 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      background: white;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .pagination-btn:hover {
+      background: #f9fafb;
+      border-color: #d1d5db;
+    }
+
+    .pagination-btn.active {
+      background: #ff8200;
+      color: white;
+      border-color: #ff8200;
+    }
+
+    .loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
   </style>
 </head>
 
@@ -68,12 +103,12 @@
   <header class="flex items-center justify-between border-b border-[#f3ece7] px-10 py-3">
     <div class="flex items-center gap-8">
       <div class="flex items-center gap-4 text-[#1b130d] logo">
-        <img src="../public/assets/logos/Okukulanaua_Logo.png" alt="Logo Okukulanaua" class="h-10">
+        <img src="./public/assets/logos/Okukulanaua_Logo.png" alt="Logo Okukulanaua">
       </div>
       <nav class="flex items-center gap-9">
         <a class="text-[#1b130d] text-sm font-medium hover:text-[#ff8200]" href="index.html">Home</a>
-        <a class="text-[#1b130d] text-sm font-medium hover:text-[#ff8200]" href="biblioteca.html">Biblioteca</a>
-        <a class="text-[#1b130d] text-sm font-medium hover:text-[#ff8200]" href="#">Comunidade</a>
+        <a class="text-[#1b130d] text-sm font-medium text-[#ff8200] font-semibold transition-colors" href="biblioteca.html">Biblioteca</a>
+        <a class="text-[#1b130d] text-sm font-medium hover:text-[#ff8200]" href="comunidade.html">Comunidade</a>
       </nav>
     </div>
     <div class="flex flex-1 justify-end gap-8">
@@ -88,18 +123,15 @@
             </svg>
           </div>
           <input id="searchInput" placeholder="Pesquisar livros..."
-            class="form-input flex w-full px-3 rounded-r-xl bg-[#f3ece7] text-[#1b130d] placeholder:text-[#9a6c4c] focus:outline-none">
+            class="form-input flex w-full px-3 rounded-r-xl bg-[#f3ece7] border-none text-[#1b130d] placeholder:text-[#9a6c4c] focus:outline-none">
         </div>
       </label>
-      <div class="flex gap-2" id="userActions">
-        <!-- Botões de login/usuário aparecem aqui -->
-      </div>
     </div>
   </header>
 
   <!-- CONTEÚDO -->
   <main class="px-40 py-6">
-    <div class="max-w-[960px] mx-auto">
+    <div class="max-w-[100%] mx-auto">
       <div class="flex justify-between items-center mb-4">
         <h1 class="text-[#1b130d] text-[28px] font-bold">Catálogo de Livros</h1>
       </div>
@@ -108,11 +140,9 @@
       <div class="flex gap-3 flex-wrap mb-4">
         <!-- Categoria -->
         <div class="filter-dropdown">
-          <button id="categoryFilter"
-            class="flex h-9 items-center gap-x-2 rounded-xl bg-[#f3ece7] px-4">
+          <button id="categoryFilter" class="flex h-9 items-center gap-x-2 rounded-xl bg-[#f3ece7] px-4">
             <span class="text-sm font-medium">Categoria</span>
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
-              viewBox="0 0 256 256">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 256 256">
               <path
                 d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z">
               </path>
@@ -120,20 +150,15 @@
           </button>
           <div id="categoryOptions" class="filter-options hidden">
             <div class="filter-option" data-category="">Todas as Categorias</div>
-            <div class="filter-option" data-category="empreendedorismo">Empreendedorismo</div>
-            <div class="filter-option" data-category="emocional">Inteligência Emocional</div>
-            <div class="filter-option" data-category="cultura">Cultura Geral</div>
-            <div class="filter-option" data-category="financas">Finanças</div>
+            <!-- Categorias serão carregadas dinamicamente -->
           </div>
         </div>
 
         <!-- Ano -->
         <div class="filter-dropdown">
-          <button id="yearFilter"
-            class="flex h-9 items-center gap-x-2 rounded-xl bg-[#f3ece7] px-4">
+          <button id="yearFilter" class="flex h-9 items-center gap-x-2 rounded-xl bg-[#f3ece7] px-4">
             <span class="text-sm font-medium">Ano</span>
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
-              viewBox="0 0 256 256">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 256 256">
               <path
                 d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z">
               </path>
@@ -141,44 +166,38 @@
           </button>
           <div id="yearOptions" class="filter-options hidden">
             <div class="filter-option" data-year="">Todos os Anos</div>
-            <div class="filter-option" data-year="2025">2025</div>
-            <div class="filter-option" data-year="2024">2024</div>
-            <div class="filter-option" data-year="2023">2023</div>
-            <div class="filter-option" data-year="2022">2022</div>
+            <!-- Anos serão carregados dinamicamente -->
           </div>
         </div>
 
         <!-- Ordenação -->
         <div class="filter-dropdown">
-          <button id="sortFilter"
-            class="flex h-9 items-center gap-x-2 rounded-xl bg-[#f3ece7] px-4">
+          <button id="sortFilter" class="flex h-9 items-center gap-x-2 rounded-xl bg-[#f3ece7] px-4">
             <span class="text-sm font-medium">Ordenar</span>
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
-              viewBox="0 0 256 256">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 256 256">
               <path
                 d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z">
               </path>
             </svg>
           </button>
           <div id="sortOptions" class="filter-options hidden">
-            <div class="filter-option" data-sort="">Padrão</div>
-            <div class="filter-option" data-sort="name-asc">A-Z</div>
-            <div class="filter-option" data-sort="name-desc">Z-A</div>
-            <div class="filter-option" data-sort="year-asc">Ano Crescente</div>
-            <div class="filter-option" data-sort="year-desc">Ano Decrescente</div>
+            <div class="filter-option" data-sort="newest">Mais Recentes</div>
+            <div class="filter-option" data-sort="title-asc">Título A-Z</div>
+            <div class="filter-option" data-sort="title-desc">Título Z-A</div>
+            <div class="filter-option" data-sort="year-desc">Ano Mais Recente</div>
+            <div class="filter-option" data-sort="year-asc">Ano Mais Antigo</div>
           </div>
         </div>
       </div>
 
       <!-- Info filtros -->
       <div class="flex justify-between items-center mb-3">
-        <span id="productCount" class="text-sm">Mostrando 0 livros</span>
-        <button id="clearFilters" class="text-[#ff8200] text-sm hover:underline">Limpar Filtros</button>
+        <span id="productCount" class="text-sm">Carregando livros...</span>
+        <button id="clearFilters" class="text-[#ff8200] text-sm hover:underline hidden">Limpar Filtros</button>
       </div>
 
       <!-- GRID DE LIVROS -->
-      <div id="productsGrid"
-        class="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4">
+      <div id="productsGrid" class="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4">
         <!-- Livros carregados dinamicamente -->
       </div>
 
@@ -191,10 +210,525 @@
     </div>
   </main>
 
-  <!-- Modais de login, registro e detalhes já existentes aqui -->
+  <!-- MODAL DE DETALHES DO LIVRO -->
+  <div id="bookModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-start mb-4">
+        <h3 id="modalTitle" class="text-xl font-bold text-[#1b130d]"></h3>
+        <button id="closeModal" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+      </div>
+      <div id="modalContent" class="space-y-4">
+        <!-- Conteúdo do modal -->
+      </div>
+    </div>
+  </div>
 
-  <script src="../src/js/scriptBiblioteca.js" defer></script>
-  <script src="./assets/js/script.js"></script>
+  <script>
+    // Configuração da API
+    const API_BASE_URL = 'http://localhost:3000/api';
+
+    // Estado da aplicação
+    let currentBooks = [];
+    let filteredBooks = [];
+    let currentPage = 1;
+    const booksPerPage = 12;
+    let currentFilters = {
+      search: '',
+      category: '',
+      year: '',
+      sort: 'newest'
+    };
+
+    // Elementos DOM
+    const productsGrid = document.getElementById('productsGrid');
+    const productCount = document.getElementById('productCount');
+    const searchInput = document.getElementById('searchInput');
+    const clearFiltersBtn = document.getElementById('clearFilters');
+    const pagination = document.getElementById('pagination');
+    const bookModal = document.getElementById('bookModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalContent = document.getElementById('modalContent');
+    const closeModal = document.getElementById('closeModal');
+
+    // Inicialização
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('🚀 Inicializando biblioteca...');
+      loadBooks();
+      setupEventListeners();
+    });
+
+    // Configurar event listeners
+    function setupEventListeners() {
+      console.log('🔧 Configurando event listeners...');
+      
+      // Pesquisa
+      if (searchInput) {
+        searchInput.addEventListener('input', debounce(handleSearch, 300));
+      }
+
+      // Filtros dropdown
+      setupFilterDropdown('categoryFilter', 'categoryOptions', 'category');
+      setupFilterDropdown('yearFilter', 'yearOptions', 'year');
+      setupFilterDropdown('sortFilter', 'sortOptions', 'sort');
+
+      // Limpar filtros
+      if (clearFiltersBtn) {
+        clearFiltersBtn.addEventListener('click', clearFilters);
+      }
+
+      // Modal
+      if (closeModal) {
+        closeModal.addEventListener('click', () => bookModal.classList.add('hidden'));
+      }
+      
+      if (bookModal) {
+        bookModal.addEventListener('click', (e) => {
+          if (e.target === bookModal) bookModal.classList.add('hidden');
+        });
+      }
+
+      // Fechar modal com ESC
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && bookModal) bookModal.classList.add('hidden');
+      });
+    }
+
+    // Configurar dropdown de filtros
+    function setupFilterDropdown(buttonId, optionsId, filterType) {
+      const button = document.getElementById(buttonId);
+      const options = document.getElementById(optionsId);
+
+      if (!button || !options) {
+        console.log(`❌ Elemento não encontrado: ${buttonId} ou ${optionsId}`);
+        return;
+      }
+
+      button.addEventListener('click', (e) => {
+        e.stopPropagation();
+        options.classList.toggle('hidden');
+        closeOtherDropdowns(optionsId);
+      });
+
+      // Fechar dropdown ao clicar fora
+      document.addEventListener('click', () => {
+        options.classList.add('hidden');
+      });
+
+      // Prevenir fechamento ao clicar no dropdown
+      options.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+
+      // Configurar eventos para opções
+      setupFilterOptions(options, filterType);
+    }
+
+    // Configurar eventos para opções de filtro
+    function setupFilterOptions(optionsElement, filterType) {
+      // Remover event listeners existentes para evitar duplicação
+      optionsElement.querySelectorAll('.filter-option').forEach(option => {
+        option.replaceWith(option.cloneNode(true));
+      });
+
+      // Adicionar novos event listeners
+      optionsElement.querySelectorAll('.filter-option').forEach(option => {
+        option.addEventListener('click', () => {
+          const value = option.dataset[filterType];
+          currentFilters[filterType] = value;
+          
+          // Atualizar texto do botão
+          const button = document.getElementById(filterType + 'Filter');
+          if (button) {
+            const span = button.querySelector('span');
+            if (span) {
+              span.textContent = getFilterButtonText(option.textContent, filterType);
+            }
+          }
+          
+          // Fechar dropdown e aplicar filtros
+          optionsElement.classList.add('hidden');
+          currentPage = 1;
+          applyFilters();
+        });
+      });
+    }
+
+    // Texto do botão de filtro
+    function getFilterButtonText(text, filterType) {
+      const defaultTexts = {
+        'category': 'Categoria',
+        'year': 'Ano', 
+        'sort': 'Ordenar'
+      };
+      
+      if (text === 'Todas as Categorias' || text === 'Todos os Anos' || text === 'Mais Recentes') {
+        return defaultTexts[filterType];
+      }
+      return text;
+    }
+
+    // Fechar outros dropdowns
+    function closeOtherDropdowns(exceptId) {
+      const dropdowns = ['categoryOptions', 'yearOptions', 'sortOptions'];
+      dropdowns.forEach(id => {
+        if (id !== exceptId) {
+          const dropdown = document.getElementById(id);
+          if (dropdown) dropdown.classList.add('hidden');
+        }
+      });
+    }
+
+    // Carregar livros da API
+    async function loadBooks() {
+      try {
+        console.log('📚 Carregando livros...');
+        if (productsGrid) productsGrid.classList.add('loading');
+        
+        const response = await fetch(`${API_BASE_URL}/books`);
+        if (!response.ok) throw new Error('Erro ao carregar livros');
+        
+        const books = await response.json();
+        currentBooks = books;
+        console.log(`✅ ${books.length} livros carregados`);
+        
+        // Carregar opções de filtro
+        populateFilterOptions(books);
+        applyFilters();
+        
+      } catch (error) {
+        console.error('❌ Erro ao carregar livros:', error);
+        if (productsGrid) {
+          productsGrid.innerHTML = `
+            <div class="col-span-full text-center py-8">
+              <p class="text-red-600">Erro ao carregar livros. Tente novamente.</p>
+              <button onclick="loadBooks()" class="mt-2 bg-[#ff8200] text-white px-4 py-2 rounded-lg hover:bg-[#d67a32]">
+                Tentar Novamente
+              </button>
+            </div>
+          `;
+        }
+      } finally {
+        if (productsGrid) productsGrid.classList.remove('loading');
+      }
+    }
+
+    // Popular opções de filtro
+    function populateFilterOptions(books) {
+      console.log('🎛️ Populando opções de filtro...');
+      
+      // Categorias
+      const categories = [...new Set(books.map(book => book.category).filter(Boolean))];
+      const categoryOptions = document.getElementById('categoryOptions');
+      if (categoryOptions) {
+        // Manter "Todas as Categorias" e adicionar novas
+        const existingOptions = categoryOptions.querySelectorAll('.filter-option');
+        const existingCategories = Array.from(existingOptions).map(opt => opt.dataset.category);
+        
+        categories.forEach(cat => {
+          if (!existingCategories.includes(cat)) {
+            const option = document.createElement('div');
+            option.className = 'filter-option';
+            option.dataset.category = cat;
+            option.textContent = cat;
+            categoryOptions.appendChild(option);
+          }
+        });
+        
+        // Reconectar eventos
+        setupFilterOptions(categoryOptions, 'category');
+      }
+
+      // Anos
+      const years = [...new Set(books.map(book => book.year).filter(year => year && year > 0))].sort((a, b) => b - a);
+      const yearOptions = document.getElementById('yearOptions');
+      if (yearOptions) {
+        // Manter "Todos os Anos" e adicionar novos
+        const existingOptions = yearOptions.querySelectorAll('.filter-option');
+        const existingYears = Array.from(existingOptions).map(opt => opt.dataset.year);
+        
+        years.forEach(year => {
+          if (!existingYears.includes(year.toString())) {
+            const option = document.createElement('div');
+            option.className = 'filter-option';
+            option.dataset.year = year;
+            option.textContent = year;
+            yearOptions.appendChild(option);
+          }
+        });
+        
+        // Reconectar eventos
+        setupFilterOptions(yearOptions, 'year');
+      }
+    }
+
+    // Aplicar filtros
+    function applyFilters() {
+      console.log('🔍 Aplicando filtros:', currentFilters);
+      
+      let filtered = [...currentBooks];
+
+      // Filtro de pesquisa
+      if (currentFilters.search) {
+        const searchTerm = currentFilters.search.toLowerCase();
+        filtered = filtered.filter(book => 
+          book.title.toLowerCase().includes(searchTerm) ||
+          (book.author && book.author.toLowerCase().includes(searchTerm)) ||
+          (book.category && book.category.toLowerCase().includes(searchTerm))
+        );
+        console.log(`📖 Após pesquisa "${currentFilters.search}": ${filtered.length} livros`);
+      }
+
+      // Filtro de categoria
+      if (currentFilters.category) {
+        filtered = filtered.filter(book => book.category === currentFilters.category);
+        console.log(`🏷️ Após categoria "${currentFilters.category}": ${filtered.length} livros`);
+      }
+
+      // Filtro de ano
+      if (currentFilters.year) {
+        filtered = filtered.filter(book => book.year == currentFilters.year);
+        console.log(`📅 Após ano "${currentFilters.year}": ${filtered.length} livros`);
+      }
+
+      // Ordenação
+      switch (currentFilters.sort) {
+        case 'title-asc':
+          filtered.sort((a, b) => a.title.localeCompare(b.title));
+          break;
+        case 'title-desc':
+          filtered.sort((a, b) => b.title.localeCompare(a.title));
+          break;
+        case 'year-desc':
+          filtered.sort((a, b) => (b.year || 0) - (a.year || 0));
+          break;
+        case 'year-asc':
+          filtered.sort((a, b) => (a.year || 0) - (b.year || 0));
+          break;
+        case 'newest':
+        default:
+          filtered.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+          break;
+      }
+
+      filteredBooks = filtered;
+      renderBooks();
+      updatePagination();
+      updateProductCount();
+      updateClearFiltersButton();
+    }
+
+    // Renderizar livros
+    function renderBooks() {
+      if (!productsGrid) return;
+      
+      const startIndex = (currentPage - 1) * booksPerPage;
+      const endIndex = startIndex + booksPerPage;
+      const booksToShow = filteredBooks.slice(startIndex, endIndex);
+
+      if (booksToShow.length === 0) {
+        productsGrid.innerHTML = `
+          <div class="col-span-full text-center py-8">
+            <p class="text-gray-600">Nenhum livro encontrado com os filtros atuais.</p>
+            ${Object.values(currentFilters).some(filter => filter) ? 
+              '<button onclick="clearFilters()" class="mt-2 text-[#ff8200] hover:underline">Limpar filtros</button>' : 
+              ''
+            }
+          </div>
+        `;
+        return;
+      }
+
+      productsGrid.innerHTML = booksToShow.map(book => `
+        <div class="book-card bg-white rounded-lg p-4 cursor-pointer" onclick="openBookModal(${book.id})">
+          <div class="flex flex-col items-center">
+            ${book.cover_image ? `
+              <img src="http://localhost:3000${book.cover_image}" 
+                   alt="${book.title}" 
+                   class="w-36 h-44 object-cover rounded-md mb-2"
+                   onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTQ0IiBoZWlnaHQ9IjE3NiIgdmlld0JveD0iMCAwIDE0NCAxNzYiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxNDQiIGhlaWdodD0iMTc2IiBmaWxsPSIjRjBGMEYwIiByeD0iNCIvPgo8dGV4dCB4PSI3MiIgeT0iODgiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSI+8J+OrjwvdGV4dD4KPC9zdmc+'">
+            ` : `
+              <div class="w-36 h-44 bg-gray-200 rounded-md mb-2 flex items-center justify-center">
+                <span class="text-4xl">📚</span>
+              </div>
+            `}
+            <h3 class="font-semibold text-center text-sm mb-1 line-clamp-2" title="${book.title}">${book.title}</h3>
+            <p class="text-xs text-gray-600 text-center">${book.author || 'Autor desconhecido'}</p>
+            ${book.year ? `<p class="text-xs text-gray-500 mt-1">${book.year}</p>` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Abrir modal de detalhes do livro
+    async function openBookModal(bookId) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/books/${bookId}`);
+        if (!response.ok) throw new Error('Erro ao carregar detalhes do livro');
+        
+        const book = await response.json();
+        
+        if (modalTitle) modalTitle.textContent = book.title;
+        if (modalContent) {
+          modalContent.innerHTML = `
+            <div class="flex gap-6">
+              ${book.cover_image ? `
+                <img src="http://localhost:3000${book.cover_image}" 
+                     alt="${book.title}" 
+                     class="w-48 h-64 object-cover rounded-lg"
+                     onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjI1NiIgdmlld0JveD0iMCAwIDE5MiAyNTYiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxOTIiIGhlaWdodD0iMjU2IiBmaWxsPSIjRjBGMEYwIiByeD0iNCIvPgo8dGV4dCB4PSI5NiIgeT0iMTI4IiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiPvCfjq48L3RleHQ+Cjwvc3ZnPg==';">
+              ` : `
+                <div class="w-48 h-64 bg-gray-200 rounded-lg flex items-center justify-center">
+                  <span class="text-6xl">📚</span>
+                </div>
+              `}
+              <div class="flex-1">
+                <p class="text-lg font-semibold mb-2">${book.author || 'Autor desconhecido'}</p>
+                ${book.year ? `<p class="text-gray-600 mb-2"><strong>Ano:</strong> ${book.year}</p>` : ''}
+                ${book.category ? `<p class="text-gray-600 mb-2"><strong>Categoria:</strong> ${book.category}</p>` : ''}
+                ${book.publisher ? `<p class="text-gray-600 mb-2"><strong>Editora:</strong> ${book.publisher}</p>` : ''}
+                ${book.isbn ? `<p class="text-gray-600 mb-2"><strong>ISBN:</strong> ${book.isbn}</p>` : ''}
+                ${book.pdf_file ? `
+                  <a href="http://localhost:3000${book.pdf_file}" 
+                     target="_blank" 
+                     class="inline-block bg-[#ff8200] text-white px-4 py-2 rounded-lg hover:bg-[#d67a32] transition-colors mt-4">
+                    📖 Ler Livro
+                  </a>
+                ` : '<p class="text-gray-500 mt-4">PDF não disponível</p>'}
+              </div>
+            </div>
+            ${book.description ? `
+              <div class="mt-4">
+                <h4 class="font-semibold mb-2">Descrição</h4>
+                <p class="text-gray-700 leading-relaxed">${book.description}</p>
+              </div>
+            ` : ''}
+          `;
+        }
+        
+        if (bookModal) bookModal.classList.remove('hidden');
+      } catch (error) {
+        console.error('Erro:', error);
+        alert('Erro ao carregar detalhes do livro');
+      }
+    }
+
+    // Atualizar paginação
+    function updatePagination() {
+      if (!pagination) return;
+      
+      const totalPages = Math.ceil(filteredBooks.length / booksPerPage);
+      
+      if (totalPages <= 1) {
+        pagination.innerHTML = '';
+        return;
+      }
+
+      let paginationHTML = '';
+      
+      // Botão anterior
+      if (currentPage > 1) {
+        paginationHTML += `<button class="pagination-btn" onclick="changePage(${currentPage - 1})">‹</button>`;
+      }
+
+      // Páginas
+      for (let i = 1; i <= totalPages; i++) {
+        if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+          paginationHTML += `
+            <button class="pagination-btn ${i === currentPage ? 'active' : ''}" 
+                    onclick="changePage(${i})">
+              ${i}
+            </button>
+          `;
+        } else if (i === currentPage - 2 || i === currentPage + 2) {
+          paginationHTML += `<span class="px-2">...</span>`;
+        }
+      }
+
+      // Botão próximo
+      if (currentPage < totalPages) {
+        paginationHTML += `<button class="pagination-btn" onclick="changePage(${currentPage + 1})">›</button>`;
+      }
+
+      pagination.innerHTML = paginationHTML;
+    }
+
+    // Mudar página
+    function changePage(page) {
+      currentPage = page;
+      renderBooks();
+      updatePagination();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Atualizar contador de produtos
+    function updateProductCount() {
+      if (!productCount) return;
+      
+      const total = filteredBooks.length;
+      const start = (currentPage - 1) * booksPerPage + 1;
+      const end = Math.min(currentPage * booksPerPage, total);
+      
+      productCount.textContent = total === 0 
+        ? 'Nenhum livro encontrado' 
+        : `Mostrando ${start}-${end} de ${total} livro${total !== 1 ? 's' : ''}`;
+    }
+
+    // Atualizar botão de limpar filtros
+    function updateClearFiltersButton() {
+      if (!clearFiltersBtn) return;
+      
+      const hasActiveFilters = currentFilters.search || currentFilters.category || currentFilters.year || currentFilters.sort !== 'newest';
+      clearFiltersBtn.classList.toggle('hidden', !hasActiveFilters);
+    }
+
+    // Manipular pesquisa
+    function handleSearch(e) {
+      currentFilters.search = e.target.value.trim();
+      currentPage = 1;
+      applyFilters();
+    }
+
+    // Limpar filtros
+    function clearFilters() {
+      currentFilters = {
+        search: '',
+        category: '',
+        year: '',
+        sort: 'newest'
+      };
+      
+      if (searchInput) searchInput.value = '';
+      
+      // Resetar botões de filtro visualmente
+      document.querySelectorAll('.filter-dropdown button').forEach(button => {
+        const span = button.querySelector('span');
+        if (button.id === 'categoryFilter') span.textContent = 'Categoria';
+        else if (button.id === 'yearFilter') span.textContent = 'Ano';
+        else if (button.id === 'sortFilter') span.textContent = 'Ordenar';
+      });
+      
+      currentPage = 1;
+      applyFilters();
+    }
+
+    // Debounce para pesquisa
+    function debounce(func, wait) {
+      let timeout;
+      return function executedFunction(...args) {
+        const later = () => {
+          clearTimeout(timeout);
+          func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+      };
+    }
+
+    // Funções globais para o HTML
+    window.openBookModal = openBookModal;
+    window.changePage = changePage;
+    window.loadBooks = loadBooks;
+    window.clearFilters = clearFilters;
+  </script>
 </body>
-
 </html>

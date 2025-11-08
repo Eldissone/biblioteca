@@ -73,3 +73,14 @@
     max-height: 100%;
     object-fit: contain;
 }
+
+.Btn-div {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    padding: 5px;
+
+    button {
+        min-width: 100px;
+    }
+}

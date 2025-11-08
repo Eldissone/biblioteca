@@ -19,7 +19,6 @@
   <link rel="icon" href="favicon.ico" />
   <link rel="stylesheet" href="../src/styles/index.css" />
   <link rel="stylesheet" href="../src/styles/style.css" />
-
   <script src="../src/js/script.js"></script>
 
   <style>
@@ -40,18 +39,17 @@
       <header class="flex items-center justify-between whitespace-nowrap border-b border-b-[#f3ece7] px-10 py-3"
         role="banner">
         <div class="flex items-center gap-4 text-[#1b130d] logo">
-          <img src="../public/assets/logos/Okukulanaua_Logo.png" alt="">
-
+          <img src="../public/assets/logos/Okukulanaua_Logo.png" alt="logo">
         </div>
         <nav class="flex flex-1 justify-end gap-8" role="navigation" aria-label="Menu principal">
           <div class="flex items-center gap-9">
-            <a class="text-[#1b130d] text-sm font-medium leading-normal hover:text-[#ff8200] transition-colors"
+            <a class="text-[#1b130d] text-sm font-medium text-[#ff8200] font-semibold transition-colors"
               href="index.html" aria-current="page">Home</a>
             <a class="text-[#1b130d] text-sm font-medium leading-normal hover:text-[#ff8200] transition-colors"
               href="biblioteca.html">biblioteca</a>
 
             <a class="text-[#1b130d] text-sm font-medium leading-normal hover:text-[#ff8200] transition-colors"
-              href="#">Comunidade</a>
+              href="comunidade.html">Comunidade</a>
           </div>
           <div class="flex gap-2" id="user-actions">
             <!-- Botões serão carregados dinamicamente -->
@@ -65,7 +63,7 @@
       </header>
 
       <div class="px-20 flex flex-1 justify-center py-5">
-        <div class="layout-content-container flex flex-col max-w-[90%] flex-1">
+        <div class="layout-content-container flex flex-col max-w-[100%] flex-1">
           <div class="@container">
             <div class="@[480px]:p-4">
               <div
@@ -117,9 +115,6 @@
               </div>
             </div>
           </div>
-
-
-
         </div>
       </div>
 
@@ -162,11 +157,8 @@
           </footer>
         </div>
       </footer>
-
     </div>
   </div>
-
-
 
   <!-- Contêiner do leitor de PDF -->
   <div id="pdf-reader-container" class="hidden fixed inset-0 bg-black bg-opacity-80 flex flex-col">
@@ -178,10 +170,6 @@
     <iframe id="pdf-reader" src="" class="flex-1 w-full h-full" style="border:none;">
     </iframe>
   </div>
-
-
-
-
 
   <script src="./assets/js/script.js"></script>
 

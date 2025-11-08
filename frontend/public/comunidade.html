@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#ff8200" />
+  <meta name="description" content="Comunidade Okukulanaua - Espaço de Partilha" />
+  <meta name="keywords" content="comunidade, livros, leitura, discussão, partilha" />
+  <meta property="og:title" content="Comunidade Okukulanaua" />
+  <meta property="og:description" content="Espaço de interação e partilha de ideias sobre livros" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://okukulanaua.com.ao/comunidade" />
+  <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin>
+  <link rel="stylesheet" as="style" onload="this.rel='stylesheet'"
+    href="https://fonts.googleapis.com/css2?display=swap&family=Noto+Sans:wght@400;500;700;900&family=Plus+Jakarta+Sans:wght@400;500;700;800">
+
+  <title>Comunidade - Okukulanaua</title>
+  <link rel="icon" type="image/x-icon" href="../public/assets/logos/favicon.ico">
+  <link rel="stylesheet" href="../src/styles/index.css">
+  <link rel="stylesheet" href="../src/styles/style.css">
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <style>
+    .hidden {
+      display: none;
+    }
+
+    .active {
+      display: block;
+    }
+
+    .fade-in {
+      animation: fadeIn 0.5s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .discussion-card {
+      transition: all 0.3s ease;
+      border-left: 4px solid transparent;
+    }
+
+    .discussion-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+      border-left-color: #ff8200;
+    }
+
+    .comment {
+      border-left: 3px solid #f3ece7;
+      transition: border-color 0.3s ease;
+    }
+
+    .comment:hover {
+      border-left-color: #ff8200;
+    }
+
+    .like-btn {
+      transition: all 0.2s ease;
+    }
+
+    .like-btn:hover {
+      transform: scale(1.1);
+    }
+
+    .like-btn.liked {
+      color: #ef4444;
+    }
+
+    .tab-active {
+      border-bottom: 3px solid #ff8200;
+      color: #ff8200;
+    }
+
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #ff8200, #d67a32);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 16px;
+    }
+
+    .online-indicator {
+      width: 10px;
+      height: 10px;
+      background: #10b981;
+      border-radius: 50%;
+      border: 2px solid white;
+      position: absolute;
+      bottom: 0;
+      right: 0;
+    }
+
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 16px;
+      border-radius: 8px;
+      color: white;
+      z-index: 1000;
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    .notification.success { background: #10b981; }
+    .notification.error { background: #ef4444; }
+    .notification.info { background: #3b82f6; }
+  </style>
+</head>
+
+<body class="bg-[#fcfaf8] min-h-screen">
+  <!-- HEADER -->
+  <header class="flex items-center justify-between border-b border-[#f3ece7] px-10 py-3">
+    <div class="flex items-center gap-8">
+      <div class="flex items-center gap-4 text-[#1b130d] logo cursor-pointer">
+        <img src="./public/assets/logos/Okukulanaua_Logo.png" alt="Logo Okukulanaua">
+      </div>
+      <nav class="flex items-center gap-9">
+        <a class="text-[#1b130d] text-sm font-medium hover:text-[#ff8200]" href="index.html">Home</a>
+        <a class="text-[#1b130d] text-sm font-medium hover:text-[#ff8200]" href="biblioteca.html">Biblioteca</a>
+        <a class="text-[#1b130d] text-sm font-medium text-[#ff8200] font-semibold transition-colors" href="comunidade.html">Comunidade</a>
+      </nav>
+    </div>
+    <div class="flex flex-1 justify-end gap-8">
+      <!-- SEARCH -->
+      <label class="flex flex-col min-w-40 max-w-64">
+        <div class="flex w-full items-stretch rounded-xl h-10">
+          <div class="text-[#9a6c4c] flex items-center justify-center pl-4 bg-[#f3ece7] rounded-l-xl">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 256 256">
+              <path
+                d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z">
+              </path>
+            </svg>
+          </div>
+          <input id="searchInput" placeholder="Pesquisar discussões..."
+            class="form-input flex w-full px-3 rounded-r-xl bg-[#f3ece7] border-none text-[#1b130d] placeholder:text-[#9a6c4c] focus:outline-none">
+        </div>
+      </label>
+      <div class="flex gap-2" id="userActions">
+        <!-- Botões de login/usuário -->
+      </div>
+    </div>
+  </header>
+
+  <!-- CONTEÚDO PRINCIPAL -->
+  <main class="px-40 py-6">
+    <div class=" max-w-[100%] flex-1">
+      <!-- CABEÇALHO DA COMUNIDADE -->
+      <div class="text-center mb-8 fade-in">
+        <h1 class="text-[#1b130d] text-[32px] font-bold mb-4">Comunidade da Biblioteca Okukulanaua</h1>
+        <p class="text-[#9a6c4c] text-lg max-w-2xl mx-auto">
+          Um espaço para partilhar ideias, debates, discutir livros e conectar com outros leitores apaixonados
+        </p>
+      </div>
+
+      <!-- ESTATÍSTICAS DA COMUNIDADE -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 fade-in">
+        <div class="bg-white rounded-lg p-6 text-center shadow-sm">
+          <div class="text-2xl font-bold text-[#ff8200] mb-2" id="totalMembers">0</div>
+          <div class="text-sm text-gray-600">Membros</div>
+        </div>
+        <div class="bg-white rounded-lg p-6 text-center shadow-sm">
+          <div class="text-2xl font-bold text-[#ff8200] mb-2" id="totalDiscussions">0</div>
+          <div class="text-sm text-gray-600">Discussões</div>
+        </div>
+        <div class="bg-white rounded-lg p-6 text-center shadow-sm">
+          <div class="text-2xl font-bold text-[#ff8200] mb-2" id="totalComments">0</div>
+          <div class="text-sm text-gray-600">Comentários</div>
+        </div>
+        <div class="bg-white rounded-lg p-6 text-center shadow-sm">
+          <div class="text-2xl font-bold text-[#ff8200] mb-2" id="onlineUsers">0</div>
+          <div class="text-sm text-gray-600">Online Agora</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <!-- COLUNA LATERAL -->
+        <div class="lg:col-span-1 space-y-6">
+          <!-- CRIAR NOVA DISCUSSÃO -->
+          <div class="bg-white rounded-lg p-6 shadow-sm fade-in">
+            <h3 class="font-semibold text-[#1b130d] mb-4">Iniciar Discussão</h3>
+            <button id="createDiscussionBtn" 
+                    class="w-full bg-[#ff8200] text-white py-3 rounded-lg hover:bg-[#d67a32] transition-colors font-medium">
+              + Nova Discussão
+            </button>
+          </div>
+
+          <!-- CATEGORIAS -->
+          <div class="bg-white rounded-lg p-6 shadow-sm fade-in">
+            <h3 class="font-semibold text-[#1b130d] mb-4">Categorias</h3>
+            <div class="space-y-2" id="categoriesList">
+              <!-- Categorias carregadas dinamicamente -->
+            </div>
+          </div>
+
+          <!-- MEMBROS ATIVOS -->
+          <div class="bg-white rounded-lg p-6 shadow-sm fade-in">
+            <h3 class="font-semibold text-[#1b130d] mb-4">Membros Ativos</h3>
+            <div class="space-y-3" id="activeMembers">
+              <!-- Membros carregados dinamicamente -->
+            </div>
+          </div>
+        </div>
+
+        <!-- CONTEÚDO PRINCIPAL -->
+        <div class="lg:col-span-3">
+          <!-- ABAS -->
+          <div class="bg-white rounded-lg shadow-sm mb-6 fade-in">
+            <div class="flex border-b border-[#f3ece7]">
+              <button class="tab-btn flex-1 py-4 text-center font-medium text-[#1b130d] tab-active" data-tab="recent">
+                Discussões Recentes
+              </button>
+              <button class="tab-btn flex-1 py-4 text-center font-medium text-[#1b130d]" data-tab="popular">
+                Mais Populares
+              </button>
+              <button class="tab-btn flex-1 py-4 text-center font-medium text-[#1b130d]" data-tab="unanswered">
+                Sem Resposta
+              </button>
+            </div>
+          </div>
+
+          <!-- LISTA DE DISCUSSÕES -->
+          <div id="discussionsList" class="space-y-4">
+            <!-- Discussões carregadas dinamicamente -->
+          </div>
+
+          <!-- CARREGAR MAIS -->
+          <div class="text-center mt-8">
+            <button id="loadMoreBtn" class="bg-white border border-[#e5e7eb] text-[#1b130d] px-6 py-3 rounded-lg hover:bg-[#f9fafb] transition-colors hidden">
+              Carregar Mais Discussões
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- MODAL CRIAR DISCUSSÃO -->
+  <div id="createDiscussionModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-start mb-4">
+        <h3 class="text-xl font-bold text-[#1b130d]">Nova Discussão</h3>
+        <button id="closeModal" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+      </div>
+      <form id="discussionForm" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Título</label>
+          <input type="text" id="discussionTitle" 
+                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff8200] focus:border-transparent"
+                 placeholder="Digite o título da discussão..." required maxlength="100">
+          <div class="text-xs text-gray-500 mt-1 text-right"><span id="titleCount">0</span>/100</div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Categoria</label>
+          <select id="discussionCategory" 
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff8200] focus:border-transparent">
+            <option value="geral">Geral</option>
+            <option value="ficcao">Ficção</option>
+            <option value="nao-ficcao">Não-Ficção</option>
+            <option value="tecnologia">Tecnologia</option>
+            <option value="autoajuda">Autoajuda</option>
+            <option value="negocios">Negócios</option>
+            <option value="romance">Romance</option>
+            <option value="fantasia">Fantasia</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Conteúdo</label>
+          <textarea id="discussionContent" rows="6"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff8200] focus:border-transparent"
+                    placeholder="Compartilhe suas ideias..." required maxlength="1000"></textarea>
+          <div class="text-xs text-gray-500 mt-1 text-right"><span id="contentCount">0</span>/1000</div>
+        </div>
+        <div class="flex justify-end gap-3 pt-4">
+          <button type="button" id="cancelDiscussion" 
+                  class="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+            Cancelar
+          </button>
+          <button type="submit" id="submitDiscussion"
+                  class="px-4 py-2 bg-[#ff8200] text-white rounded-lg hover:bg-[#d67a32] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            Publicar Discussão
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL DETALHES DA DISCUSSÃO -->
+  <div id="discussionModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+      <div id="discussionModalContent">
+        <!-- Conteúdo carregado dinamicamente -->
+      </div>
+    </div>
+  </div>
+<script src="./assets/js/com.js"></script>
+</body>
+</html>
