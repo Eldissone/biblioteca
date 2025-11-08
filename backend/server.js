@@ -513,7 +513,7 @@ app.get('/api/admin/stats', authenticateAdmin, async (req, res) => {
 });
 
 // ====================
-// ROTAS DA COMUNIDADE
+// ROTAS DA COMUNIDADE - VERSÃO CORRIGIDA
 // ====================
 
 // GET - Listar discussões com filtros e paginação
@@ -527,83 +527,131 @@ app.get('/api/community/discussions', async (req, res) => {
             search = '' 
         } = req.query;
 
+        console.log('📖 Buscando discussões:', { page, limit, category, tab, search });
+
         const offset = (page - 1) * limit;
         let whereConditions = ['1=1'];
-        let params = [limit, offset];
+        let queryParams = [limit, offset];
         let paramCount = 2;
 
         // Filtro por categoria
-        if (category && category !== 'all') {
+        if (category && category !== 'all' && category !== 'undefined') {
             paramCount++;
-            whereConditions.push(`category = $${paramCount}`);
-            params.push(category);
+            whereConditions.push(`cd.category = $${paramCount}`);
+            queryParams.push(category);
         }
 
         // Filtro por busca
-        if (search) {
+        if (search && search !== 'undefined') {
             paramCount++;
-            whereConditions.push(`(LOWER(title) LIKE LOWER($${paramCount}) OR LOWER(content) LIKE LOWER($${paramCount}))`);
-            params.push(`%${search}%`);
+            whereConditions.push(`(LOWER(cd.title) LIKE LOWER($${paramCount}) OR LOWER(cd.content) LIKE LOWER($${paramCount}))`);
+            queryParams.push(`%${search}%`);
         }
 
         // Ordenação por aba
-        let orderBy = 'created_at DESC';
+        let orderBy = 'cd.created_at DESC';
         switch (tab) {
             case 'popular':
-                orderBy = 'likes DESC, created_at DESC';
+                orderBy = 'cd.likes DESC, cd.created_at DESC';
                 break;
             case 'unanswered':
-                whereConditions.push('is_answered = false');
-                orderBy = 'created_at DESC';
+                whereConditions.push('cd.is_answered = false');
+                orderBy = 'cd.created_at DESC';
                 break;
             case 'recent':
             default:
-                orderBy = 'created_at DESC';
+                orderBy = 'cd.created_at DESC';
                 break;
         }
 
         const whereClause = whereConditions.join(' AND ');
 
-        // Query principal
+        // Verificar se há usuário logado para likes
+        const authHeader = req.headers['authorization'];
+        let userId = null;
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            const token = authHeader.split(' ')[1];
+            try {
+                const decoded = jwt.verify(token, JWT_SECRET);
+                userId = decoded.id;
+            } catch (error) {
+                console.log('Token inválido, continuando sem usuário');
+            }
+        }
+
+        // Query principal - SIMPLIFICADA
         const discussionsQuery = `
             SELECT 
                 cd.*,
                 r.username as author_username,
                 r.full_name as author_name,
-                COUNT(cl.id) as like_count,
-                COUNT(cc.id) as comment_count
+                r.is_online as author_online,
+                (SELECT COUNT(*) FROM community_likes cl WHERE cl.discussion_id = cd.id) as like_count,
+                (SELECT COUNT(*) FROM community_comments cc WHERE cc.discussion_id = cd.id) as comment_count,
+                EXISTS(
+                    SELECT 1 FROM community_likes cl 
+                    WHERE cl.discussion_id = cd.id AND cl.user_id = $${paramCount + 1}
+                ) as user_liked
             FROM community_discussions cd
             LEFT JOIN readers r ON cd.author_id = r.id
-            LEFT JOIN community_likes cl ON cd.id = cl.discussion_id
-            LEFT JOIN community_comments cc ON cd.id = cc.discussion_id
             WHERE ${whereClause}
-            GROUP BY cd.id, r.username, r.full_name
             ORDER BY ${orderBy}
             LIMIT $1 OFFSET $2
         `;
 
+        queryParams.push(userId);
+
         // Query para total
         const countQuery = `
-            SELECT COUNT(*) 
+            SELECT COUNT(*) as total
             FROM community_discussions cd
             WHERE ${whereClause}
         `;
 
+        console.log('Executando query de discussões...');
+        
         const [discussionsResult, countResult] = await Promise.all([
-            pool.query(discussionsQuery, params),
-            pool.query(countQuery, params.slice(2))
+            pool.query(discussionsQuery, queryParams),
+            pool.query(countQuery, queryParams.slice(2, -1)) // Remove limit, offset e userId
         ]);
 
+        const discussions = discussionsResult.rows.map(discussion => ({
+            id: discussion.id,
+            title: discussion.title,
+            content: discussion.content,
+            author_id: discussion.author_id,
+            category: discussion.category,
+            likes: discussion.like_count || 0,
+            comments_count: discussion.comment_count || 0,
+            views: discussion.views || 0,
+            is_answered: discussion.is_answered,
+            created_at: discussion.created_at,
+            updated_at: discussion.updated_at,
+            author_username: discussion.author_username,
+            author_name: discussion.author_name,
+            author_online: discussion.author_online,
+            user_liked: discussion.user_liked || false
+        }));
+
+        const total = parseInt(countResult.rows[0]?.total || 0);
+        const totalPages = Math.ceil(total / limit);
+
+        console.log(`✅ Encontradas ${discussions.length} discussões (total: ${total})`);
+
         res.json({
-            discussions: discussionsResult.rows,
-            total: parseInt(countResult.rows[0].count),
+            discussions,
+            total,
             page: parseInt(page),
-            totalPages: Math.ceil(countResult.rows[0].count / limit)
+            totalPages
         });
 
     } catch (error) {
-        console.error('Erro ao buscar discussões:', error);
-        res.status(500).json({ error: 'Erro ao buscar discussões' });
+        console.error('❌ Erro ao buscar discussões:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Erro interno ao buscar discussões',
+            message: error.message
+        });
     }
 });
 
@@ -611,35 +659,78 @@ app.get('/api/community/discussions', async (req, res) => {
 app.get('/api/community/discussions/:id', async (req, res) => {
     try {
         const { id } = req.params;
+        console.log(`📖 Buscando discussão ${id}`);
 
         // Incrementar visualizações
         await pool.query(
-            'UPDATE community_discussions SET views = views + 1 WHERE id = $1',
+            'UPDATE community_discussions SET views = COALESCE(views, 0) + 1 WHERE id = $1',
             [id]
         );
+
+        // Verificar se há usuário logado
+        const authHeader = req.headers['authorization'];
+        let userId = null;
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            const token = authHeader.split(' ')[1];
+            try {
+                const decoded = jwt.verify(token, JWT_SECRET);
+                userId = decoded.id;
+            } catch (error) {
+                // Token inválido
+            }
+        }
 
         const discussionQuery = `
             SELECT 
                 cd.*,
                 r.username as author_username,
-                r.full_name as author_name
+                r.full_name as author_name,
+                r.is_online as author_online,
+                (SELECT COUNT(*) FROM community_likes cl WHERE cl.discussion_id = cd.id) as like_count,
+                (SELECT COUNT(*) FROM community_comments cc WHERE cc.discussion_id = cd.id) as comment_count,
+                EXISTS(
+                    SELECT 1 FROM community_likes cl 
+                    WHERE cl.discussion_id = cd.id AND cl.user_id = $2
+                ) as user_liked
             FROM community_discussions cd
             LEFT JOIN readers r ON cd.author_id = r.id
             WHERE cd.id = $1
         `;
 
-        const discussionResult = await pool.query(discussionQuery, [id]);
+        const discussionResult = await pool.query(discussionQuery, [id, userId]);
 
         if (discussionResult.rows.length === 0) {
-            return res.status(404).json({ error: 'Discussão não encontrada' });
+            return res.status(404).json({ 
+                success: false,
+                error: 'Discussão não encontrada' 
+            });
         }
+
+        const discussion = {
+            id: discussionResult.rows[0].id,
+            title: discussionResult.rows[0].title,
+            content: discussionResult.rows[0].content,
+            author_id: discussionResult.rows[0].author_id,
+            category: discussionResult.rows[0].category,
+            likes: discussionResult.rows[0].like_count || 0,
+            comments_count: discussionResult.rows[0].comment_count || 0,
+            views: discussionResult.rows[0].views || 0,
+            is_answered: discussionResult.rows[0].is_answered,
+            created_at: discussionResult.rows[0].created_at,
+            updated_at: discussionResult.rows[0].updated_at,
+            author_username: discussionResult.rows[0].author_username,
+            author_name: discussionResult.rows[0].author_name,
+            author_online: discussionResult.rows[0].author_online,
+            user_liked: discussionResult.rows[0].user_liked || false
+        };
 
         // Buscar comentários
         const commentsQuery = `
             SELECT 
                 cc.*,
                 r.username as author_username,
-                r.full_name as author_name
+                r.full_name as author_name,
+                r.is_online as author_online
             FROM community_comments cc
             LEFT JOIN readers r ON cc.author_id = r.id
             WHERE cc.discussion_id = $1
@@ -648,14 +739,21 @@ app.get('/api/community/discussions/:id', async (req, res) => {
 
         const commentsResult = await pool.query(commentsQuery, [id]);
 
+        console.log(`✅ Discussão ${id} carregada com ${commentsResult.rows.length} comentários`);
+
         res.json({
-            discussion: discussionResult.rows[0],
+            success: true,
+            discussion,
             comments: commentsResult.rows
         });
 
     } catch (error) {
-        console.error('Erro ao buscar discussão:', error);
-        res.status(500).json({ error: 'Erro ao buscar discussão' });
+        console.error('❌ Erro ao buscar discussão:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Erro interno ao buscar discussão',
+            message: error.message
+        });
     }
 });
 
@@ -665,8 +763,28 @@ app.post('/api/community/discussions', authenticateToken, async (req, res) => {
         const { title, content, category } = req.body;
         const authorId = req.user.id;
 
+        console.log('📝 Criando discussão:', { title, category, authorId });
+
+        // Validações
         if (!title || !content) {
-            return res.status(400).json({ error: 'Título e conteúdo são obrigatórios' });
+            return res.status(400).json({ 
+                success: false,
+                error: 'Título e conteúdo são obrigatórios' 
+            });
+        }
+
+        if (title.length < 10 || title.length > 100) {
+            return res.status(400).json({ 
+                success: false,
+                error: 'O título deve ter entre 10 e 100 caracteres' 
+            });
+        }
+
+        if (content.length < 20 || content.length > 1000) {
+            return res.status(400).json({ 
+                success: false,
+                error: 'O conteúdo deve ter entre 20 e 1000 caracteres' 
+            });
         }
 
         const result = await pool.query(
@@ -677,15 +795,35 @@ app.post('/api/community/discussions', authenticateToken, async (req, res) => {
             [title, content, authorId, category || 'geral']
         );
 
+        // Buscar dados completos da discussão
+        const fullDiscussionQuery = `
+            SELECT 
+                cd.*,
+                r.username as author_username,
+                r.full_name as author_name,
+                r.is_online as author_online
+            FROM community_discussions cd
+            LEFT JOIN readers r ON cd.author_id = r.id
+            WHERE cd.id = $1
+        `;
+
+        const fullResult = await pool.query(fullDiscussionQuery, [result.rows[0].id]);
+
+        console.log(`✅ Discussão criada com ID: ${result.rows[0].id}`);
+
         res.status(201).json({
             success: true,
-            discussion: result.rows[0],
+            discussion: fullResult.rows[0],
             message: 'Discussão criada com sucesso!'
         });
 
     } catch (error) {
-        console.error('Erro ao criar discussão:', error);
-        res.status(500).json({ error: 'Erro ao criar discussão' });
+        console.error('❌ Erro ao criar discussão:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Erro interno ao criar discussão',
+            message: error.message
+        });
     }
 });
 
@@ -696,8 +834,20 @@ app.post('/api/community/discussions/:id/comments', authenticateToken, async (re
         const { content } = req.body;
         const authorId = req.user.id;
 
+        console.log(`💬 Adicionando comentário à discussão ${id}`);
+
         if (!content) {
-            return res.status(400).json({ error: 'Conteúdo do comentário é obrigatório' });
+            return res.status(400).json({ 
+                success: false,
+                error: 'Conteúdo do comentário é obrigatório' 
+            });
+        }
+
+        if (content.length > 500) {
+            return res.status(400).json({ 
+                success: false,
+                error: 'O comentário deve ter no máximo 500 caracteres' 
+            });
         }
 
         // Verificar se a discussão existe
@@ -707,7 +857,10 @@ app.post('/api/community/discussions/:id/comments', authenticateToken, async (re
         );
 
         if (discussionCheck.rows.length === 0) {
-            return res.status(404).json({ error: 'Discussão não encontrada' });
+            return res.status(404).json({ 
+                success: false,
+                error: 'Discussão não encontrada' 
+            });
         }
 
         // Inserir comentário
@@ -719,7 +872,7 @@ app.post('/api/community/discussions/:id/comments', authenticateToken, async (re
             [id, authorId, content]
         );
 
-        // Atualizar contador de comentários e marcar como respondida
+        // Atualizar contador de comentários
         await pool.query(
             `UPDATE community_discussions 
              SET comments_count = comments_count + 1, 
@@ -729,15 +882,35 @@ app.post('/api/community/discussions/:id/comments', authenticateToken, async (re
             [id]
         );
 
+        // Buscar dados completos do comentário
+        const fullCommentQuery = `
+            SELECT 
+                cc.*,
+                r.username as author_username,
+                r.full_name as author_name,
+                r.is_online as author_online
+            FROM community_comments cc
+            LEFT JOIN readers r ON cc.author_id = r.id
+            WHERE cc.id = $1
+        `;
+
+        const fullResult = await pool.query(fullCommentQuery, [commentResult.rows[0].id]);
+
+        console.log(`✅ Comentário adicionado com ID: ${commentResult.rows[0].id}`);
+
         res.status(201).json({
             success: true,
-            comment: commentResult.rows[0],
+            comment: fullResult.rows[0],
             message: 'Comentário adicionado com sucesso!'
         });
 
     } catch (error) {
-        console.error('Erro ao adicionar comentário:', error);
-        res.status(500).json({ error: 'Erro ao adicionar comentário' });
+        console.error('❌ Erro ao adicionar comentário:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Erro interno ao adicionar comentário',
+            message: error.message
+        });
     }
 });
 
@@ -747,11 +920,29 @@ app.post('/api/community/discussions/:id/like', authenticateToken, async (req, r
         const { id } = req.params;
         const userId = req.user.id;
 
+        console.log(`❤️  Toggle like para discussão ${id} pelo usuário ${userId}`);
+
+        // Verificar se a discussão existe
+        const discussionCheck = await pool.query(
+            'SELECT id FROM community_discussions WHERE id = $1',
+            [id]
+        );
+
+        if (discussionCheck.rows.length === 0) {
+            return res.status(404).json({ 
+                success: false,
+                error: 'Discussão não encontrada' 
+            });
+        }
+
         // Verificar se já curtiu
         const existingLike = await pool.query(
             'SELECT id FROM community_likes WHERE discussion_id = $1 AND user_id = $2',
             [id, userId]
         );
+
+        let liked = false;
+        let message = '';
 
         if (existingLike.rows.length > 0) {
             // Remover like
@@ -763,12 +954,8 @@ app.post('/api/community/discussions/:id/like', authenticateToken, async (req, r
                 'UPDATE community_discussions SET likes = GREATEST(likes - 1, 0) WHERE id = $1',
                 [id]
             );
-
-            res.json({
-                success: true,
-                liked: false,
-                message: 'Like removido'
-            });
+            liked = false;
+            message = 'Like removido';
         } else {
             // Adicionar like
             await pool.query(
@@ -779,36 +966,37 @@ app.post('/api/community/discussions/:id/like', authenticateToken, async (req, r
                 'UPDATE community_discussions SET likes = likes + 1 WHERE id = $1',
                 [id]
             );
-
-            res.json({
-                success: true,
-                liked: true,
-                message: 'Discussão curtida!'
-            });
+            liked = true;
+            message = 'Discussão curtida!';
         }
 
+        console.log(`✅ Like atualizado: ${message}`);
+
+        res.json({
+            success: true,
+            liked,
+            message
+        });
+
     } catch (error) {
-        console.error('Erro ao curtir discussão:', error);
-        res.status(500).json({ error: 'Erro ao curtir discussão' });
+        console.error('❌ Erro ao curtir discussão:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Erro interno ao curtir discussão',
+            message: error.message
+        });
     }
 });
 
 // GET - Estatísticas da comunidade
 app.get('/api/community/stats', async (req, res) => {
     try {
+        console.log('📊 Buscando estatísticas da comunidade');
+
         const totalDiscussions = await pool.query('SELECT COUNT(*) FROM community_discussions');
         const totalComments = await pool.query('SELECT COUNT(*) FROM community_comments');
         const totalMembers = await pool.query("SELECT COUNT(*) FROM readers WHERE role = 'reader'");
         const onlineMembers = await pool.query("SELECT COUNT(*) FROM readers WHERE is_online = true AND role = 'reader'");
-
-        // Discussões mais populares
-        const popularDiscussions = await pool.query(`
-            SELECT cd.*, r.username as author_username, r.full_name as author_name
-            FROM community_discussions cd
-            LEFT JOIN readers r ON cd.author_id = r.id
-            ORDER BY cd.likes DESC, cd.views DESC
-            LIMIT 5
-        `);
 
         // Membros ativos
         const activeMembers = await pool.query(`
@@ -819,18 +1007,25 @@ app.get('/api/community/stats', async (req, res) => {
             LIMIT 10
         `);
 
-        res.json({
+        const stats = {
             totalDiscussions: parseInt(totalDiscussions.rows[0].count),
             totalComments: parseInt(totalComments.rows[0].count),
             totalMembers: parseInt(totalMembers.rows[0].count),
             onlineMembers: parseInt(onlineMembers.rows[0].count),
-            popularDiscussions: popularDiscussions.rows,
             activeMembers: activeMembers.rows
-        });
+        };
+
+        console.log('✅ Estatísticas carregadas:', stats);
+
+        res.json(stats);
 
     } catch (error) {
-        console.error('Erro ao buscar estatísticas:', error);
-        res.status(500).json({ error: 'Erro ao buscar estatísticas' });
+        console.error('❌ Erro ao buscar estatísticas:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Erro interno ao buscar estatísticas',
+            message: error.message
+        });
     }
 });
 
@@ -840,16 +1035,26 @@ app.put('/api/community/users/online', authenticateToken, async (req, res) => {
         const { isOnline } = req.body;
         const userId = req.user.id;
 
+        console.log(`🟢 Atualizando status online para usuário ${userId}: ${isOnline}`);
+
         await pool.query(
             'UPDATE readers SET is_online = $1 WHERE id = $2',
             [isOnline, userId]
         );
 
-        res.json({ success: true, message: 'Status atualizado' });
+        res.json({ 
+            success: true, 
+            message: 'Status atualizado',
+            isOnline 
+        });
 
     } catch (error) {
-        console.error('Erro ao atualizar status:', error);
-        res.status(500).json({ error: 'Erro ao atualizar status' });
+        console.error('❌ Erro ao atualizar status:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Erro interno ao atualizar status',
+            message: error.message
+        });
     }
 });
 

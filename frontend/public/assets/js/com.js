@@ -1,22 +1,10 @@
-
-// Configurações globais - MESMAS CONFIGURAÇÕES DA PÁGINA PRINCIPAL
-const API_BASE_URL = (typeof window !== 'undefined' && window.location && window.location.origin) ? `${window.location.origin}/api` : 'http://localhost:3000/api';
+// Configurações globais
+const API_BASE_URL = window.location.origin + '/api';
 let userToken = localStorage.getItem('userToken');
 let userData = JSON.parse(localStorage.getItem('userData') || 'null');
 
-// Configuração da comunidade
-const STORAGE_KEYS = {
-    DISCUSSIONS: 'okukulanaua_discussions',
-    COMMENTS: 'okukulanaua_comments',
-    LIKES: 'okukulanaua_likes',
-    MEMBERS: 'okukulanaua_members'
-};
-
 // Estado da aplicação
 let discussions = [];
-let comments = [];
-let likes = [];
-let members = [];
 let filteredDiscussions = [];
 let currentPage = 1;
 const discussionsPerPage = 8;
@@ -41,6 +29,92 @@ const titleCount = document.getElementById('titleCount');
 const contentCount = document.getElementById('contentCount');
 const submitDiscussion = document.getElementById('submitDiscussion');
 
+// API functions
+const communityAPI = {
+    async getDiscussions(params = {}) {
+        const queryString = new URLSearchParams(params).toString();
+        const response = await fetch(`${API_BASE_URL}/community/discussions?${queryString}`);
+        if (!response.ok) throw new Error('Erro ao buscar discussões');
+        return await response.json();
+    },
+
+    async getDiscussion(id) {
+        const response = await fetch(`${API_BASE_URL}/community/discussions/${id}`);
+        if (!response.ok) throw new Error('Erro ao buscar discussão');
+        return await response.json();
+    },
+
+    async createDiscussion(discussionData) {
+        const response = await fetch(`${API_BASE_URL}/community/discussions`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${userToken}`
+            },
+            body: JSON.stringify(discussionData)
+        });
+        if (!response.ok) throw new Error('Erro ao criar discussão');
+        return await response.json();
+    },
+
+    async addComment(discussionId, content) {
+        const response = await fetch(`${API_BASE_URL}/community/discussions/${discussionId}/comments`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${userToken}`
+            },
+            body: JSON.stringify({ content })
+        });
+        if (!response.ok) throw new Error('Erro ao adicionar comentário');
+        return await response.json();
+    },
+
+    async toggleLike(discussionId) {
+        const response = await fetch(`${API_BASE_URL}/community/discussions/${discussionId}/like`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${userToken}`
+            }
+        });
+        if (!response.ok) throw new Error('Erro ao curtir discussão');
+        return await response.json();
+    },
+
+    async getStats() {
+        const response = await fetch(`${API_BASE_URL}/community/stats`);
+        if (!response.ok) throw new Error('Erro ao buscar estatísticas');
+        return await response.json();
+    },
+
+    async updateOnlineStatus(isOnline) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/community/users/online`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${userToken}`
+                },
+                body: JSON.stringify({ isOnline })          
+            });
+
+            if (!response.ok) {
+                // Não lançar erro para status online, apenas logar
+                console.log('Erro ao atualizar status online (não crítico):', response.status);
+                return { success: false, error: 'Erro não crítico' };
+            }
+
+            return await response.json();
+        } catch (error) {
+            // Não lançar erro para falhas de conexão em status online
+            console.log('Erro de conexão ao atualizar status online (ignorado):', error);
+            return { success: false, error: 'Erro de conexão' };
+        }
+    }
+
+};
+
+
 // Inicialização
 document.addEventListener('DOMContentLoaded', function () {
     // Configurar logo click
@@ -54,10 +128,24 @@ document.addEventListener('DOMContentLoaded', function () {
     initializeCommunity();
     setupEventListeners();
     loadData();
-    renderAll();
+    updateStatistics();
+
+    // Atualizar status online do usuário
+    if (userData) {
+        communityAPI.updateOnlineStatus(true);
+    }
 });
 
-// FUNÇÕES DE AUTENTICAÇÃO - MESMAS DA PÁGINA PRINCIPAL
+// Atualizar status quando o usuário sair
+window.addEventListener('beforeunload', function () {
+    if (userData) {
+        // Usar sendBeacon para garantir que a requisição seja enviada mesmo ao sair da página
+        const data = JSON.stringify({ isOnline: false });
+        navigator.sendBeacon(`${API_BASE_URL}/community/users/online`, data);
+    }
+});
+
+// FUNÇÕES DE AUTENTICAÇÃO
 function isUserLoggedIn() {
     return userToken && userData;
 }
@@ -115,34 +203,73 @@ function loadUserActions() {
 }
 
 function logout() {
+    // Usar fetch sync para garantir que a requisição seja completada
+    if (userData) {
+        // Criar uma requisição síncrona para garantir o envio
+        const xhr = new XMLHttpRequest();
+        xhr.open('PUT', `${API_BASE_URL}/community/users/online`, false); // false = sync
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('Authorization', `Bearer ${userToken}`);
+        xhr.send(JSON.stringify({ isOnline: false }));
+    }
+
     localStorage.removeItem('userToken');
     localStorage.removeItem('userData');
     userToken = null;
     userData = null;
-    currentUser = null; // Adicione esta linha
     window.location.reload();
 }
 
-// Atualize a função initializeCommunity
+// Remover o event listener problemático do beforeunload e substituir por:
+window.addEventListener('beforeunload', function () {
+    if (userData) {
+        // Usar fetch com keepalive para requisições antes de sair da página
+        fetch(`${API_BASE_URL}/community/users/online`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${userToken}`
+            },
+            body: JSON.stringify({ isOnline: false }),
+            keepalive: true // Esta opção garante que a requisição continue mesmo após a página fechar
+        }).catch(error => {
+            console.log('Erro ao atualizar status offline (ignorado):', error);
+        });
+    }
+});
+
+// Adicionar também para visibility change (quando a aba é minimizada/alterada)
+document.addEventListener('visibilitychange', function () {
+    if (userData) {
+        if (document.visibilityState === 'hidden') {
+            // Página não está mais visível
+            fetch(`${API_BASE_URL}/community/users/online`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${userToken}`
+                },
+                body: JSON.stringify({ isOnline: false }),
+                keepalive: true
+            }).catch(console.error);
+        } else {
+            // Página voltou a ser visível
+            communityAPI.updateOnlineStatus(true).catch(console.error);
+        }
+    }
+});
+
 function initializeCommunity() {
     loadUserActions();
 
-    // Sincronizar currentUser com userData
-    currentUser = userData;
-
-    // Adicionar usuário atual aos membros se estiver logado
-    if (isUserLoggedIn()) {
-        const userExists = members.some(m => m.id === userData.id);
-        if (!userExists) {
-            members.push({
-                id: userData.id,
-                name: userData.full_name || userData.username,
-                avatar: getInitials(userData.full_name || userData.username),
-                isOnline: true,
-                joinDate: new Date().toISOString()
+    // Atualizar status online do usuário
+    if (userData) {
+        // Pequeno delay para garantir que a página carregou completamente
+        setTimeout(() => {
+            communityAPI.updateOnlineStatus(true).catch(error => {
+                console.log('Erro ao atualizar status online:', error);
             });
-            saveData();
-        }
+        }, 1000);
     }
 }
 
@@ -183,163 +310,48 @@ function setupEventListeners() {
     });
 }
 
-function loadData() {
-    // Carregar dados do localStorage
-    discussions = JSON.parse(localStorage.getItem(STORAGE_KEYS.DISCUSSIONS)) || [];
-    comments = JSON.parse(localStorage.getItem(STORAGE_KEYS.COMMENTS)) || [];
-    likes = JSON.parse(localStorage.getItem(STORAGE_KEYS.LIKES)) || [];
-    members = JSON.parse(localStorage.getItem(STORAGE_KEYS.MEMBERS)) || getDefaultMembers();
+async function loadData() {
+    try {
+        // Limpar parâmetros undefined
+        const params = {
+            page: currentPage,
+            limit: discussionsPerPage,
+            ...(currentCategory !== 'all' && currentCategory !== 'undefined' && { category: currentCategory }),
+            tab: currentTab,
+            ...(searchInput?.value && { search: searchInput.value })
+        };
 
-    // Se não há discussões, criar algumas de exemplo
-    if (discussions.length === 0) {
-        discussions = getSampleDiscussions();
-        comments = getSampleComments();
-        saveData();
+        console.log('Carregando dados com parâmetros:', params);
+
+        const data = await communityAPI.getDiscussions(params);
+        discussions = data.discussions;
+        filteredDiscussions = data.discussions;
+
+        renderDiscussions();
+        updateLoadMoreButton(data.total, data.page, data.totalPages);
+        renderCategories();
+
+    } catch (error) {
+        console.error('Erro ao carregar dados:', error);
+        showNotification('Erro ao carregar discussões', 'error');
     }
 }
 
-function saveData() {
-    localStorage.setItem(STORAGE_KEYS.DISCUSSIONS, JSON.stringify(discussions));
-    localStorage.setItem(STORAGE_KEYS.COMMENTS, JSON.stringify(comments));
-    localStorage.setItem(STORAGE_KEYS.LIKES, JSON.stringify(likes));
-    localStorage.setItem(STORAGE_KEYS.MEMBERS, JSON.stringify(members));
-}
+function updateLoadMoreButton(total, page, totalPages) {
+    if (!loadMoreBtn) return;
 
-function getDefaultMembers() {
-    return [
-        {
-            id: 1,
-            name: "Maria Silva",
-            avatar: "MS",
-            isOnline: true,
-            joinDate: "2024-01-01T10:00:00"
-        },
-        {
-            id: 2,
-            name: "João Santos",
-            avatar: "JS",
-            isOnline: true,
-            joinDate: "2024-01-02T11:00:00"
-        },
-        {
-            id: 3,
-            name: "Ana Costa",
-            avatar: "AC",
-            isOnline: false,
-            joinDate: "2024-01-03T12:00:00"
-        },
-        {
-            id: 4,
-            name: "Pedro Lima",
-            avatar: "PL",
-            isOnline: true,
-            joinDate: "2024-01-04T13:00:00"
-        },
-        {
-            id: 5,
-            name: "Carla Dias",
-            avatar: "CD",
-            isOnline: false,
-            joinDate: "2024-01-05T14:00:00"
-        }
-    ];
-}
+    const hasMore = page < totalPages;
+    loadMoreBtn.classList.toggle('hidden', !hasMore);
 
-function getSampleDiscussions() {
-    return [
-        {
-            id: 1,
-            title: "O que acham do livro '48 Leis do Poder'?",
-            content: "Estou lendo este livro e gostaria de saber a opinião de vocês sobre as estratégias apresentadas. Algumas me parecem bastante úteis para o desenvolvimento profissional.",
-            authorId: 1,
-            category: "autoajuda",
-            likes: 15,
-            commentsCount: 3,
-            views: 124,
-            createdAt: "2024-01-15T10:30:00",
-            isAnswered: true
-        },
-        {
-            id: 2,
-            title: "Recomendações de livros de ficção científica",
-            content: "Estou procurando novas leituras no gênero de ficção científica. Alguém tem recomendações de autores contemporâneos?",
-            authorId: 2,
-            category: "ficcao",
-            likes: 23,
-            commentsCount: 5,
-            views: 187,
-            createdAt: "2024-01-14T15:45:00",
-            isAnswered: true
-        },
-        {
-            id: 3,
-            title: "Como criar o hábito da leitura?",
-            content: "Sempre tive dificuldade em manter uma rotina de leitura. Alguma dica prática para criar e manter esse hábito?",
-            authorId: 3,
-            category: "geral",
-            likes: 34,
-            commentsCount: 7,
-            views: 256,
-            createdAt: "2024-01-13T09:15:00",
-            isAnswered: true
-        }
-    ];
-}
-
-function getSampleComments() {
-    return [
-        {
-            id: 1,
-            discussionId: 1,
-            authorId: 2,
-            content: "Excelente livro! A lei 6 me ajudou muito na carreira.",
-            createdAt: "2024-01-15T11:00:00",
-            likes: 3
-        },
-        {
-            id: 2,
-            discussionId: 1,
-            authorId: 4,
-            content: "Cuidado com algumas estratégias que podem ser antiéticas.",
-            createdAt: "2024-01-15T12:30:00",
-            likes: 1
-        },
-        {
-            id: 3,
-            discussionId: 2,
-            authorId: 1,
-            content: "Recomendo 'Projeto Hail Mary' do Andy Weir!",
-            createdAt: "2024-01-14T16:00:00",
-            likes: 5
-        }
-    ];
-}
-
-function renderAll() {
-    updateStatistics();
-    applyFilters();
-    renderCategories();
-    renderActiveMembers();
-}
-
-function updateStatistics() {
-    const totalComments = comments.length;
-    const onlineMembers = members.filter(m => m.isOnline).length;
-
-    if (document.getElementById('totalMembers')) document.getElementById('totalMembers').textContent = members.length;
-    if (document.getElementById('totalDiscussions')) document.getElementById('totalDiscussions').textContent = discussions.length;
-    if (document.getElementById('totalComments')) document.getElementById('totalComments').textContent = totalComments;
-    if (document.getElementById('onlineUsers')) document.getElementById('onlineUsers').textContent = onlineMembers;
+    if (hasMore) {
+        loadMoreBtn.innerHTML = `Carregar mais (${total - (page * discussionsPerPage)} restantes)`;
+    }
 }
 
 function renderDiscussions() {
     if (!discussionsList) return;
 
-    const startIndex = (currentPage - 1) * discussionsPerPage;
-    const endIndex = startIndex + discussionsPerPage;
-    const discussionsToShow = filteredDiscussions.slice(0, endIndex);
-
-    if (discussionsToShow.length === 0) {
+    if (discussions.length === 0) {
         discussionsList.innerHTML = `
           <div class="text-center py-12">
             <div class="text-6xl mb-4">📚</div>
@@ -353,15 +365,13 @@ function renderDiscussions() {
             ` : ''}
           </div>
         `;
-        if (loadMoreBtn) loadMoreBtn.classList.add('hidden');
         return;
     }
 
-    discussionsList.innerHTML = discussionsToShow.map(discussion => {
-        const author = members.find(m => m.id === discussion.authorId);
-        const userLikes = likes.filter(l => l.discussionId === discussion.id && l.userId === (userData?.id));
-        const isLiked = userLikes.length > 0;
-        const discussionComments = comments.filter(c => c.discussionId === discussion.id);
+    discussionsList.innerHTML = discussions.map(discussion => {
+        const isLiked = discussion.user_liked || false;
+        const authorName = discussion.author_name || discussion.author_username || 'Utilizador';
+        const authorInitials = getInitials(authorName);
 
         return `
           <div class="discussion-card bg-white rounded-lg p-6 shadow-sm fade-in">
@@ -374,7 +384,7 @@ function renderDiscussions() {
                 <span class="bg-[#f3ece7] text-[#9a6c4c] text-xs px-2 py-1 rounded-full">
                   ${getCategoryName(discussion.category)}
                 </span>
-                ${!discussion.isAnswered ? '<span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">Sem resposta</span>' : ''}
+                ${!discussion.is_answered ? '<span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">Sem resposta</span>' : ''}
               </div>
             </div>
             
@@ -382,12 +392,12 @@ function renderDiscussions() {
               <div class="flex items-center gap-4">
                 <div class="flex items-center gap-2">
                   <div class="user-avatar relative">
-                    ${author?.avatar || '??'}
-                    ${author?.isOnline ? '<div class="online-indicator"></div>' : ''}
+                    ${authorInitials}
+                    <div class="online-indicator"></div>
                   </div>
-                  <span>${author?.name || 'Utilizador'}</span>
+                  <span>${authorName}</span>
                 </div>
-                <span>${formatDate(discussion.createdAt)}</span>
+                <span>${formatDate(discussion.created_at)}</span>
               </div>
               <div class="flex items-center gap-4">
                 <button class="like-btn flex items-center gap-1 ${isLiked ? 'liked' : ''}" 
@@ -397,14 +407,14 @@ function renderDiscussions() {
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                           d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                   </svg>
-                  ${discussion.likes}
+                  ${discussion.likes || 0}
                 </button>
                 <div class="flex items-center gap-1 cursor-pointer" onclick="openDiscussionModal(${discussion.id})">
                   <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                           d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                   </svg>
-                  ${discussionComments.length}
+                  ${discussion.comments_count || 0}
                 </div>
                 <div class="flex items-center gap-1">
                   <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -413,29 +423,35 @@ function renderDiscussions() {
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                           d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                   </svg>
-                  ${discussion.views}
+                  ${discussion.views || 0}
                 </div>
               </div>
             </div>
           </div>
         `;
     }).join('');
-
-    if (loadMoreBtn) loadMoreBtn.classList.toggle('hidden', endIndex >= filteredDiscussions.length);
 }
 
 function renderCategories() {
     const categoriesList = document.getElementById('categoriesList');
     if (!categoriesList) return;
 
+    // Contar discussões por categoria
+    const categoryCounts = discussions.reduce((acc, discussion) => {
+        acc[discussion.category] = (acc[discussion.category] || 0) + 1;
+        return acc;
+    }, {});
+
+    const totalCount = discussions.length;
+
     const categories = [
-        { id: 'all', name: 'Todas', count: discussions.length },
-        { id: 'geral', name: 'Geral', count: discussions.filter(d => d.category === 'geral').length },
-        { id: 'ficcao', name: 'Ficção', count: discussions.filter(d => d.category === 'ficcao').length },
-        { id: 'nao-ficcao', name: 'Não-Ficção', count: discussions.filter(d => d.category === 'nao-ficcao').length },
-        { id: 'autoajuda', name: 'Autoajuda', count: discussions.filter(d => d.category === 'autoajuda').length },
-        { id: 'negocios', name: 'Negócios', count: discussions.filter(d => d.category === 'negocios').length },
-        { id: 'tecnologia', name: 'Tecnologia', count: discussions.filter(d => d.category === 'tecnologia').length }
+        { id: 'all', name: 'Todas', count: totalCount },
+        { id: 'geral', name: 'Geral', count: categoryCounts.geral || 0 },
+        { id: 'ficcao', name: 'Ficção', count: categoryCounts.ficcao || 0 },
+        { id: 'nao-ficcao', name: 'Não-Ficção', count: categoryCounts['nao-ficcao'] || 0 },
+        { id: 'autoajuda', name: 'Autoajuda', count: categoryCounts.autoajuda || 0 },
+        { id: 'negocios', name: 'Negócios', count: categoryCounts.negocios || 0 },
+        { id: 'tecnologia', name: 'Tecnologia', count: categoryCounts.tecnologia || 0 }
     ];
 
     categoriesList.innerHTML = categories.map(cat => `
@@ -447,27 +463,33 @@ function renderCategories() {
       `).join('');
 }
 
-function renderActiveMembers() {
+async function renderActiveMembers() {
     const activeMembers = document.getElementById('activeMembers');
     if (!activeMembers) return;
 
-    const onlineMembers = members.filter(m => m.isOnline).slice(0, 5);
+    try {
+        const stats = await communityAPI.getStats();
+        const onlineMembers = stats.activeMembers?.filter(m => m.is_online) || [];
 
-    activeMembers.innerHTML = onlineMembers.map(member => `
-        <div class="flex items-center gap-3">
-          <div class="user-avatar relative">
-            ${member.avatar}
-            <div class="online-indicator"></div>
-          </div>
-          <div class="flex-1">
-            <div class="font-medium text-sm">${member.name}</div>
-            <div class="text-xs text-gray-500">Online</div>
-          </div>
-        </div>
-      `).join('');
+        activeMembers.innerHTML = onlineMembers.slice(0, 5).map(member => `
+            <div class="flex items-center gap-3">
+              <div class="user-avatar relative">
+                ${getInitials(member.full_name || member.username)}
+                <div class="online-indicator"></div>
+              </div>
+              <div class="flex-1">
+                <div class="font-medium text-sm">${member.full_name || member.username}</div>
+                <div class="text-xs text-gray-500">Online</div>
+              </div>
+            </div>
+          `).join('');
 
-    if (onlineMembers.length === 0) {
-        activeMembers.innerHTML = '<p class="text-gray-500 text-sm">Nenhum membro online</p>';
+        if (onlineMembers.length === 0) {
+            activeMembers.innerHTML = '<p class="text-gray-500 text-sm">Nenhum membro online</p>';
+        }
+    } catch (error) {
+        console.error('Erro ao carregar membros ativos:', error);
+        activeMembers.innerHTML = '<p class="text-gray-500 text-sm">Erro ao carregar membros</p>';
     }
 }
 
@@ -483,6 +505,8 @@ function toggleCreateDiscussionModal() {
 }
 
 function updateCharacterCounts() {
+    if (!titleCount || !contentCount) return;
+
     titleCount.textContent = discussionTitle.value.length;
     contentCount.textContent = discussionContent.value.length;
 
@@ -490,61 +514,60 @@ function updateCharacterCounts() {
     const isTitleValid = discussionTitle.value.length >= 10 && discussionTitle.value.length <= 100;
     const isContentValid = discussionContent.value.length >= 20 && discussionContent.value.length <= 1000;
 
-    submitDiscussion.disabled = !isTitleValid || !isContentValid;
+    if (submitDiscussion) {
+        submitDiscussion.disabled = !isTitleValid || !isContentValid;
+    }
 }
 
-function handleCreateDiscussion(e) {
+async function handleCreateDiscussion(e) {
     e.preventDefault();
 
     const title = discussionTitle.value.trim();
     const category = document.getElementById('discussionCategory').value;
     const content = discussionContent.value.trim();
 
-    const newDiscussion = {
-        id: Date.now(), // ID único baseado no timestamp
-        title,
-        content,
-        authorId: userData.id,
-        category,
-        likes: 0,
-        commentsCount: 0,
-        views: 0,
-        createdAt: new Date().toISOString(),
-        isAnswered: false
-    };
+    try {
+        await communityAPI.createDiscussion({ title, content, category });
 
-    discussions.unshift(newDiscussion);
-    saveData();
+        // Recarregar dados
+        await loadData();
+        await updateStatistics();
 
-    // Atualizar a exibição
-    applyFilters();
-    updateStatistics();
-    renderCategories();
+        // Reset form and close modal
+        discussionForm.reset();
+        updateCharacterCounts();
+        createDiscussionModal.classList.add('hidden');
 
-    // Reset form and close modal
-    discussionForm.reset();
-    updateCharacterCounts();
-    createDiscussionModal.classList.add('hidden');
-
-    showNotification('Discussão criada com sucesso!', 'success');
+        showNotification('Discussão criada com sucesso!', 'success');
+    } catch (error) {
+        console.error('Erro ao criar discussão:', error);
+        showNotification('Erro ao criar discussão', 'error');
+    }
 }
 
-function openDiscussionModal(discussionId) {
-    const discussion = discussions.find(d => d.id === discussionId);
-    if (!discussion) return;
+async function openDiscussionModal(discussionId) {
+    try {
+        const data = await communityAPI.getDiscussion(discussionId);
+        currentDiscussionId = discussionId;
 
-    // Incrementar visualizações
-    discussion.views++;
-    saveData();
+        // Renderizar modal com os dados
+        renderDiscussionModal(data.discussion, data.comments);
+        discussionModal.classList.remove('hidden');
 
-    const author = members.find(m => m.id === discussion.authorId);
-    const discussionComments = comments.filter(c => c.discussionId === discussionId);
-    const userLikes = likes.filter(l => l.discussionId === discussionId && l.userId === (userData?.id));
-    const isLiked = userLikes.length > 0;
+    } catch (error) {
+        console.error('Erro ao abrir discussão:', error);
+        showNotification('Erro ao carregar discussão', 'error');
+    }
+}
 
-    currentDiscussionId = discussionId;
-
+function renderDiscussionModal(discussion, comments) {
     const modalContent = document.getElementById('discussionModalContent');
+    if (!modalContent) return;
+
+    const authorName = discussion.author_name || discussion.author_username || 'Utilizador';
+    const authorInitials = getInitials(authorName);
+    const isLiked = discussion.user_liked || false;
+
     modalContent.innerHTML = `
         <div class="flex justify-between items-start mb-4">
           <h3 class="text-xl font-bold text-[#1b130d]">${discussion.title}</h3>
@@ -553,10 +576,10 @@ function openDiscussionModal(discussionId) {
         
         <div class="bg-gray-50 rounded-lg p-4 mb-6">
           <div class="flex items-center gap-3 mb-3">
-            <div class="user-avatar">${author?.avatar || '??'}</div>
+            <div class="user-avatar">${authorInitials}</div>
             <div>
-              <div class="font-medium">${author?.name || 'Utilizador'}</div>
-              <div class="text-sm text-gray-500">${formatDate(discussion.createdAt)} • ${discussion.views} visualizações</div>
+              <div class="font-medium">${authorName}</div>
+              <div class="text-sm text-gray-500">${formatDate(discussion.created_at)} • ${discussion.views || 0} visualizações</div>
             </div>
           </div>
           <p class="text-gray-700 leading-relaxed whitespace-pre-wrap">${discussion.content}</p>
@@ -569,20 +592,20 @@ function openDiscussionModal(discussionId) {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                       d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
               </svg>
-              ${discussion.likes}
+              ${discussion.likes || 0}
             </button>
             <div class="flex items-center gap-1 text-gray-600">
               <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                       d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
-              ${discussionComments.length} comentários
+              ${comments.length} comentários
             </div>
           </div>
         </div>
 
         <div class="space-y-4">
-          <h4 class="font-semibold text-[#1b130d]">Comentários (${discussionComments.length})</h4>
+          <h4 class="font-semibold text-[#1b130d]">Comentários (${comments.length})</h4>
           
           <!-- Área de comentário -->
           ${userData ? `
@@ -606,20 +629,21 @@ function openDiscussionModal(discussionId) {
           
           <!-- Lista de comentários -->
           <div class="space-y-3" id="commentsList">
-            ${discussionComments.length === 0 ? `
+            ${comments.length === 0 ? `
               <div class="text-center py-8 text-gray-500">
                 <div class="text-4xl mb-2">💬</div>
                 <p>Seja o primeiro a comentar!</p>
               </div>
-            ` : discussionComments.map(comment => {
-        const commentAuthor = members.find(m => m.id === comment.authorId);
+            ` : comments.map(comment => {
+        const commentAuthorName = comment.author_name || comment.author_username || 'Utilizador';
+        const commentAuthorInitials = getInitials(commentAuthorName);
         return `
                 <div class="comment bg-gray-50 rounded-lg p-4">
                   <div class="flex items-center gap-3 mb-2">
-                    <div class="user-avatar">${commentAuthor?.avatar || '??'}</div>
+                    <div class="user-avatar">${commentAuthorInitials}</div>
                     <div>
-                      <div class="font-medium">${commentAuthor?.name || 'Utilizador'}</div>
-                      <div class="text-sm text-gray-500">${formatDate(comment.createdAt)}</div>
+                      <div class="font-medium">${commentAuthorName}</div>
+                      <div class="text-sm text-gray-500">${formatDate(comment.created_at)}</div>
                     </div>
                   </div>
                   <p class="text-gray-700 whitespace-pre-wrap">${comment.content}</p>
@@ -638,11 +662,9 @@ function openDiscussionModal(discussionId) {
             commentCount.textContent = commentText.value.length;
         });
     }
-
-    discussionModal.classList.remove('hidden');
 }
 
-function addComment() {
+async function addComment() {
     if (!userData) {
         showNotification('Por favor, faça login para comentar.', 'error');
         return;
@@ -661,30 +683,19 @@ function addComment() {
         return;
     }
 
-    const newComment = {
-        id: Date.now(),
-        discussionId: currentDiscussionId,
-        authorId: userData.id,
-        content,
-        createdAt: new Date().toISOString(),
-        likes: 0
-    };
+    try {
+        await communityAPI.addComment(currentDiscussionId, content);
 
-    comments.push(newComment);
+        // Recarregar a discussão
+        await openDiscussionModal(currentDiscussionId);
+        await loadData(); // Atualizar lista
+        await updateStatistics();
 
-    // Atualizar contador de comentários na discussão
-    const discussion = discussions.find(d => d.id === currentDiscussionId);
-    if (discussion) {
-        discussion.commentsCount = comments.filter(c => c.discussionId === currentDiscussionId).length;
-        discussion.isAnswered = true; // Marcar como respondida
+        showNotification('Comentário adicionado com sucesso!', 'success');
+    } catch (error) {
+        console.error('Erro ao adicionar comentário:', error);
+        showNotification('Erro ao adicionar comentário', 'error');
     }
-
-    saveData();
-    openDiscussionModal(currentDiscussionId); // Recarregar modal
-    applyFilters(); // Atualizar lista de discussões
-    updateStatistics();
-
-    showNotification('Comentário adicionado com sucesso!', 'success');
 }
 
 function switchTab(tab) {
@@ -700,99 +711,96 @@ function switchTab(tab) {
         }
     });
 
-    applyFilters();
+    loadData();
 }
 
 function filterByCategory(category) {
     currentCategory = category;
     currentPage = 1;
-    applyFilters();
-    renderCategories();
-}
-
-function applyFilters() {
-    let filtered = [...discussions];
-
-    // Filtro por categoria
-    if (currentCategory !== 'all') {
-        filtered = filtered.filter(d => d.category === currentCategory);
-    }
-
-    // Filtro por aba
-    switch (currentTab) {
-        case 'popular':
-            filtered.sort((a, b) => b.likes - a.likes);
-            break;
-        case 'unanswered':
-            filtered = filtered.filter(d => !d.isAnswered);
-            filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-            break;
-        case 'recent':
-        default:
-            filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-            break;
-    }
-
-    filteredDiscussions = filtered;
-    renderDiscussions();
+    loadData();
 }
 
 function handleSearch(e) {
     const searchTerm = e.target.value.toLowerCase().trim();
-
-    if (searchTerm) {
-        filteredDiscussions = discussions.filter(d =>
-            d.title.toLowerCase().includes(searchTerm) ||
-            d.content.toLowerCase().includes(searchTerm)
-        );
-    } else {
-        filteredDiscussions = [...discussions];
-    }
-
     currentPage = 1;
-    applyFilters();
+
+    // Recarregar dados com o termo de busca
+    loadData();
 }
 
-function loadMoreDiscussions() {
+async function loadMoreDiscussions() {
     currentPage++;
-    renderDiscussions();
+    try {
+        const params = {
+            page: currentPage,
+            limit: discussionsPerPage,
+            category: currentCategory !== 'all' ? currentCategory : undefined,
+            tab: currentTab,
+            search: searchInput?.value || ''
+        };
+
+        const data = await communityAPI.getDiscussions(params);
+
+        // Adicionar às discussões existentes
+        discussions = [...discussions, ...data.discussions];
+        filteredDiscussions = discussions;
+
+        renderDiscussions();
+        updateLoadMoreButton(data.total, data.page, data.totalPages);
+
+    } catch (error) {
+        console.error('Erro ao carregar mais discussões:', error);
+        showNotification('Erro ao carregar mais discussões', 'error');
+    }
 }
 
-function toggleLike(discussionId) {
+async function toggleLike(discussionId) {
     if (!userData) {
         showNotification('Por favor, faça login para curtir discussões.', 'error');
         return;
     }
 
-    const discussion = discussions.find(d => d.id === discussionId);
-    if (!discussion) return;
+    try {
+        const result = await communityAPI.toggleLike(discussionId);
 
-    const existingLike = likes.find(l => l.discussionId === discussionId && l.userId === userData.id);
+        // Recarregar dados
+        await loadData();
 
-    if (existingLike) {
-        // Remover like
-        likes = likes.filter(l => l !== existingLike);
-        discussion.likes--;
-    } else {
-        // Adicionar like
-        likes.push({
-            id: Date.now(),
-            discussionId,
-            userId: userData.id,
-            createdAt: new Date().toISOString()
-        });
-        discussion.likes++;
+        // Se o modal está aberto, atualizar também
+        if (currentDiscussionId === discussionId) {
+            await openDiscussionModal(discussionId);
+        }
+
+        showNotification(result.message, 'success');
+    } catch (error) {
+        console.error('Erro ao curtir:', error);
+        showNotification('Erro ao curtir discussão', 'error');
     }
+}
 
-    saveData();
-    applyFilters(); // Atualizar a lista
+async function updateStatistics() {
+    try {
+        const stats = await communityAPI.getStats();
 
-    // Se o modal está aberto, atualizar também
-    if (currentDiscussionId === discussionId) {
-        openDiscussionModal(discussionId);
+        if (document.getElementById('totalMembers')) {
+            document.getElementById('totalMembers').textContent = stats.totalMembers;
+        }
+        if (document.getElementById('totalDiscussions')) {
+            document.getElementById('totalDiscussions').textContent = stats.totalDiscussions;
+        }
+        if (document.getElementById('totalComments')) {
+            document.getElementById('totalComments').textContent = stats.totalComments;
+        }
+        if (document.getElementById('onlineUsers')) {
+            document.getElementById('onlineUsers').textContent = stats.onlineMembers;
+        }
+
+        // Atualizar membros ativos
+        await renderActiveMembers();
+
+    } catch (error) {
+        console.error('Erro ao atualizar estatísticas:', error);
     }
-
-    showNotification(existingLike ? 'Like removido' : 'Discussão curtida!', 'success');
 }
 
 // Funções auxiliares
@@ -828,35 +836,6 @@ function getInitials(name) {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
 }
 
-function updateUserActions(isLoggedIn) {
-    const userActions = document.getElementById('userActions');
-    if (!userActions) return;
-
-    if (isLoggedIn) {
-        userActions.innerHTML = `
-          <div class="flex items-center gap-3">
-            <div class="user-avatar">${getInitials(userData.full_name || userData.username)}</div>
-            <div class="text-sm">
-              <div class="font-medium">${userData.full_name || userData.username}</div>
-              <div class="text-xs text-gray-500">Online</div>
-            </div>
-            <button onclick="logout()" class="text-[#1b130d] text-sm font-medium hover:text-[#ff8200] ml-2">
-              Sair
-            </button>
-          </div>
-        `;
-    } else {
-        userActions.innerHTML = `
-          <a href="login.html" class="text-[#1b130d] text-sm font-medium hover:text-[#ff8200]">
-            Entrar
-          </a>
-          <a href="registro.html" class="bg-[#ff8200] text-white px-4 py-2 rounded-lg hover:bg-[#d67a32] transition-colors text-sm font-medium">
-            Registar
-          </a>
-        `;
-    }
-}
-
 function showNotification(message, type = 'info') {
     // Remover notificações existentes
     const existingNotifications = document.querySelectorAll('.notification');
@@ -872,12 +851,6 @@ function showNotification(message, type = 'info') {
         notification.style.animation = 'slideIn 0.3s ease reverse';
         setTimeout(() => notification.remove(), 300);
     }, 3000);
-}
-
-function logout() {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userData');
-    window.location.reload();
 }
 
 function debounce(func, wait) {
