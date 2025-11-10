@@ -106,10 +106,6 @@ function createBookCard(book) {
             Ler
           </button>
 
-          <button onclick="downloadBook('${book.title}', '${pdfUrl}')"
-            class="mt-2 px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-[#0d783a]">
-            Download
-          </button>
         </div>
 
       </div>
@@ -151,14 +147,6 @@ function openCheckout(title, image, pdfUrl) {
   console.log("Pedido:", selectedBook);
 }
 
-// Download do PDF
-function downloadBook(title, pdfUrl) {
-  if (!pdfUrl) return alert("PDF não disponível!");
-  const link = document.createElement("a");
-  link.href = pdfUrl;
-  link.download = title + ".pdf";
-  link.click();
-}
 
 // Ler PDF no leitor interno
 function readNow(title, pdfUrl) {

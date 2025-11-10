@@ -96,7 +96,6 @@ function displayBooks() {
                     <p class="text-[#9a6c4c] text-xs truncate">${book.author || 'Autor desconhecido'}</p>
                     <div class="flex gap-2 mt-2">
                         <button onclick="readNow('${escapeJs(book.title)}','${pdfUrl}')" class="px-3 py-1 bg-[#ff8200] text-white text-sm rounded hover:bg-[#d67a3a]">Ler</button>
-                        <button onclick="downloadBook('${escapeJs(book.title)}','${pdfUrl}')" class="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-[#0d783a]">Download</button>
                     </div>
                 `;
         booksGrid.appendChild(bookCard);
@@ -132,7 +131,6 @@ function showBookModal(book) {
 
     // Botões (se existirem)
     if (document.getElementById('readNowBtn')) document.getElementById('readNowBtn').onclick = () => readNow(book.title, book.pdf_file || book.pdf);
-    if (document.getElementById('downloadBtn')) document.getElementById('downloadBtn').onclick = () => downloadBook(book.title, book.pdf_file || book.pdf);
 
     showModal('bookDetailModal');
 }
@@ -143,13 +141,4 @@ function readNow(title, pdfUrl) {
     const reader = document.getElementById("pdf-reader");
     reader.src = pdfUrl;
     document.getElementById("pdf-reader-container").classList.remove("hidden");
-}
-
-// Download PDF
-function downloadBook(title, pdfUrl) {
-    if (!pdfUrl) return alert("PDF não disponível!");
-    const link = document.createElement("a");
-    link.href = pdfUrl;
-    link.download = title + ".pdf";
-    link.click();
 }
