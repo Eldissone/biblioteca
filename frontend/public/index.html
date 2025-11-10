@@ -29,6 +29,143 @@
     .active {
       display: flex !important;
     }
+
+    /* Estilos para responsividade móvel */
+    @media (max-width: 768px) {
+      /* Header responsivo */
+      header {
+        padding: 10px 15px !important;
+        flex-wrap: wrap;
+      }
+      
+      .logo img {
+        max-height: 40px;
+      }
+      
+      /* Menu hamburguer */
+      .mobile-menu-toggle {
+        display: block !important;
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #1b130d;
+      }
+      
+      .desktop-nav {
+        display: none;
+      }
+      
+      .mobile-nav {
+        display: none;
+        width: 100%;
+        flex-direction: column;
+        background-color: #fcfaf8;
+        padding: 15px 0;
+        border-top: 1px solid #f3ece7;
+        margin-top: 10px;
+      }
+      
+      .mobile-nav.active {
+        display: flex;
+      }
+      
+      .mobile-nav a {
+        padding: 12px 15px;
+        border-bottom: 1px solid #f3ece7;
+      }
+      
+      /* Conteúdo principal */
+      .px-20 {
+        padding-left: 15px !important;
+        padding-right: 15px !important;
+      }
+      
+      .layout-content-container {
+        max-width: 100% !important;
+      }
+      
+      /* Hero section */
+      .hero-section {
+        padding: 20px 15px !important;
+        min-height: 400px !important;
+      }
+      
+      .hero-section h1 {
+        font-size: 28px !important;
+        line-height: 1.2 !important;
+      }
+      
+      .hero-section h2 {
+        font-size: 16px !important;
+      }
+      
+      /* Seções de livros */
+      h2 {
+        font-size: 20px !important;
+        padding-left: 15px !important;
+        padding-right: 15px !important;
+      }
+      
+      .book-scroll-container {
+        padding: 10px 15px !important;
+      }
+      
+      /* Footer */
+      footer .flex-wrap {
+        gap: 15px !important;
+      }
+      
+      footer .min-w-40 {
+        min-width: auto !important;
+        flex: 1 0 45%;
+      }
+      
+      /* Ajustes gerais */
+      .flex.gap-2#user-actions {
+        margin-top: 10px;
+        width: 100%;
+        justify-content: center;
+      }
+      
+      #userInitial {
+        margin-top: 10px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .hero-section {
+        min-height: 350px !important;
+      }
+      
+      .hero-section h1 {
+        font-size: 24px !important;
+      }
+      
+      footer .min-w-40 {
+        flex: 1 0 100%;
+      }
+    }
+    
+    /* Estilos base para o menu hamburguer */
+    .mobile-menu-toggle {
+      display: none;
+    }
+    
+    .mobile-nav {
+      display: none;
+    }
+    
+    /* Melhorias para toque em dispositivos móveis */
+    button, a {
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    /* Melhorias de acessibilidade para foco */
+    button:focus, a:focus {
+      outline: 2px solid #ff8200;
+      outline-offset: 2px;
+    }
   </style>
 </head>
 
@@ -41,7 +178,13 @@
         <div class="flex items-center gap-4 text-[#1b130d] logo">
           <img src="../public/assets/logos/Okukulanaua_Logo.png" alt="logo">
         </div>
-        <nav class="flex flex-1 justify-end gap-8" role="navigation" aria-label="Menu principal">
+        
+        <!-- Botão do menu hamburguer para mobile -->
+        <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Abrir menu">
+          ☰
+        </button>
+        
+        <nav class="desktop-nav flex flex-1 justify-end gap-8" role="navigation" aria-label="Menu principal">
           <div class="flex items-center gap-9">
             <a class="text-[#1b130d] text-sm font-medium text-[#ff8200] font-semibold transition-colors"
               href="index.html" aria-current="page">Home</a>
@@ -60,6 +203,19 @@
             
           </div>
         </nav>
+        
+        <!-- Menu móvel -->
+        <nav class="mobile-nav" id="mobileNav" role="navigation" aria-label="Menu móvel">
+          <a class="text-[#1b130d] text-base font-medium text-[#ff8200] font-semibold transition-colors py-3"
+            href="index.html" aria-current="page">Home</a>
+          <a class="text-[#1b130d] text-base font-medium leading-normal hover:text-[#ff8200] transition-colors py-3"
+            href="biblioteca.html">biblioteca</a>
+          <a class="text-[#1b130d] text-base font-medium leading-normal hover:text-[#ff8200] transition-colors py-3"
+            href="comunidade.html">Comunidade</a>
+          <div class="flex gap-2 mt-3" id="mobile-user-actions">
+            <!-- Botões móveis serão carregados dinamicamente -->
+          </div>
+        </nav>
       </header>
 
       <div class="px-20 flex flex-1 justify-center py-5">
@@ -67,7 +223,7 @@
           <div class="@container">
             <div class="@[480px]:p-4">
               <div
-                class="flex min-h-[500px] flex-col gap-6 bg-cover bg-center bg-no-repeat @[480px]:gap-8 @[480px]:rounded-xl items-center justify-center p-4"
+                class="hero-section flex min-h-[500px] flex-col gap-6 bg-cover bg-center bg-no-repeat @[480px]:gap-8 @[480px]:rounded-xl items-center justify-center p-4"
                 style='background-image: linear-gradient(rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.4) 100%), url("../public/assets/img/b1.jpg");'>
                 <div class="flex flex-col gap-2 text-center">
                   <h2
@@ -95,7 +251,7 @@
           <!-- Sessão 1: books em Destaque -->
           <div
             class="flex overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden mb-6">
-            <div class="flex items-stretch p-4 gap-3 min-w-full" id="featured-products">
+            <div class="book-scroll-container flex items-stretch p-4 gap-3 min-w-full" id="featured-products">
               <!-- books serão carregados dinamicamente aqui -->
               <div class="flex items-center justify-center h-32 text-[#6d2306]">
                 <p>Carregando books...</p>
@@ -108,7 +264,7 @@
             Todos os Livros</h2>
           <div
             class="flex overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <div class="flex items-stretch p-4 gap-3 min-w-full" id="new-products">
+            <div class="book-scroll-container flex items-stretch p-4 gap-3 min-w-full" id="new-products">
               <!-- books serão carregados dinamicamente aqui -->
               <div class="flex items-center justify-center h-32 text-[#6d2306]">
                 <p>Carregando books...</p>
@@ -170,6 +326,46 @@
     <iframe id="pdf-reader" src="" class="flex-1 w-full h-full" style="border:none;">
     </iframe>
   </div>
+
+  <script>
+    // Script para o menu hamburguer
+    document.addEventListener('DOMContentLoaded', function() {
+      const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+      const mobileNav = document.getElementById('mobileNav');
+      
+      if (mobileMenuToggle && mobileNav) {
+        mobileMenuToggle.addEventListener('click', function() {
+          mobileNav.classList.toggle('active');
+          // Alternar ícone do menu
+          mobileMenuToggle.textContent = mobileNav.classList.contains('active') ? '✕' : '☰';
+        });
+        
+        // Fechar menu ao clicar em um link
+        const mobileLinks = mobileNav.querySelectorAll('a');
+        mobileLinks.forEach(link => {
+          link.addEventListener('click', function() {
+            mobileNav.classList.remove('active');
+            mobileMenuToggle.textContent = '☰';
+          });
+        });
+      }
+      
+      // Fechar menu ao redimensionar a janela para desktop
+      window.addEventListener('resize', function() {
+        if (window.innerWidth > 768 && mobileNav) {
+          mobileNav.classList.remove('active');
+          if (mobileMenuToggle) {
+            mobileMenuToggle.textContent = '☰';
+          }
+        }
+      });
+    });
+    
+    // Função para fechar o leitor de PDF (mantida do código original)
+    function closeReader() {
+      document.getElementById('pdf-reader-container').classList.add('hidden');
+    }
+  </script>
 
   <script src="./assets/js/script.js"></script>
 
