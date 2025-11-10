@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Okukulanaua Admin - Painel de Controle</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?display=swap&family=Noto+Sans:wght@400;500;700;900&family=Plus+Jakarta+Sans:wght@400;500;700;800">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="admin-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1 class="logo">Biblioteca Admin</h1>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="#" class="nav-link active" data-page="dashboard">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" />
+                            </svg>
+                            Dashboard
+                        </a></li>
+                    <li><a href="#" class="nav-link" data-page="books">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path
+                                    d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z" />
+                            </svg>
+                            Livros
+                        </a></li>
+                    <li><a href="#" class="nav-link" data-page="readers">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path
+                                    d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A1.5 1.5 0 0 0 18.54 8H17c-.8 0-1.54.37-2.01 1l-3.7 3.7c-.28.28-.44.66-.44 1.06V20h2v-6.24L16.5 18H20z" />
+                            </svg>
+                            Leitores
+                        </a></li>
+                    <li><a href="#" class="nav-link" data-page="analytics">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path
+                                    d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z" />
+                            </svg>
+                            Analytics
+                        </a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-header">
+                <div class="header-left">
+                    <h2 id="page-title">Dashboard</h2>
+                </div>
+                <div class="header-right">
+                    <div class="admin-profile">
+                        <span id="admin-name">Carregando...</span>
+                        <button class="logout-btn" id="logout-btn">Sair</button>
+                    </div>
+                </div>
+            </header>
+
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+                <button id="refresh-stats-btn" class="btn btn-secondary">Atualizar</button>
+                <div id="stats-spinner"
+                    style="width:20px; height:20px; border:3px solid #eee; border-top-color:#ff8200; border-radius:50%; display:none; animation:spin 1s linear infinite">
+                </div>
+            </div>
+
+            <style>
+                @keyframes spin {
+                    from {
+                        transform: rotate(0deg);
+                    }
+
+                    to {
+                        transform: rotate(360deg);
+                    }
+                }
+            </style>
+
+            <!-- Dashboard Page -->
+            <div id="dashboard-page" class="page-content active">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                <path
+                                    d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z" />
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Total de Livros</h3>
+                            <p id="stat-total-books" class="stat-number">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                <path
+                                    d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A1.5 1.5 0 0 0 18.54 8H17c-.8 0-1.54.37-2.01 1l-3.7 3.7c-.28.28-.44.66-.44 1.06V20h2v-6.24L16.5 18H20z" />
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Leitores Ativos</h3>
+                            <p id="stat-total-readers" class="stat-number">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                <path
+                                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Livros concluídos</h3>
+                            <p id="stat-borrowed-books" class="stat-number">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                <path
+                                    d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z" />
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Time de Leitura</h3>
+                            <p id="stat-active-loans" class="stat-number">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-grid">
+                    <div class="top-borrowed">
+                        <h3>Top Livros Mais Lidos</h3>
+                        <div class="chart-container" style="display:flex; gap:16px; align-items:flex-start;">
+                            <div style="width:50%; height:220px;">
+                                <canvas id="topBooksChart" width="400" height="200"></canvas>
+                            </div>
+                            <div style="flex:1">
+                                <ul id="topBooksList" class="product-list"
+                                    style="list-style:none; padding:0; margin:0;"></ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="trends" style="margin-top:20px;">
+                        <h3>Tendência - Últimos 14 dias</h3>
+                        <div style="height:260px;">
+                            <canvas id="trendsChart" width="800" height="260"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Books Page -->
+            <div id="books-page" class="page-content">
+                <div class="page-header">
+                    <h2>Gerenciar Livros</h2>
+                    <button class="btn btn-primary" id="add-book-btn">Adicionar Livro</button>
+                </div>
+
+                <div class="products-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Capa</th>
+                                <th>Título</th>
+                                <th>Autor</th>
+                                <th>Ano</th>
+                                <th>Categoria</th>
+                                <th>Descrição</th>
+                                <th>PDF</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="books-tbody">
+                            <!-- Livros serão carregados aqui via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Readers Page -->
+            <div id="readers-page" class="page-content">
+                <div class="page-header">
+                    <h2>Gerenciar Leitores</h2>
+                </div>
+
+                <div class="customers-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Email</th>
+                                <th>Telefone</th>
+                                <th>Endereço</th>
+                                <th>Data de Registro</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="readers-tbody">
+                            <!-- Leitores serão carregados aqui -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Analytics Page -->
+            <div id="analytics-page" class="page-content">
+                <div class="page-header">
+                    <h2>Analytics e Relatórios</h2>
+                </div>
+                <div class="analytics-content">
+                    <div class="analytics-grid">
+                        <div class="analytics-card">
+                            <h3>Distribuição por Categoria</h3>
+                            <div style="height:300px;">
+                                <canvas id="categoryChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="analytics-card">
+                            <h3>Livros Mais Populares</h3>
+                            <div id="popular-books-list" style="max-height:300px; overflow-y:auto;">
+                                <!-- Lista de livros populares -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Book Modal -->
+            <div id="add-book-modal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Adicionar Livro</h3>
+                        <button class="close-btn" id="close-book-modal">&times;</button>
+                    </div>
+                    <form id="add-book-form" enctype="multipart/form-data">
+                        <div class="form-group">
+                            <label>Título do Livro *</label>
+                            <input type="text" name="title" required class="form-input">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Autor *</label>
+                            <input type="text" name="author" required class="form-input">
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Editora</label>
+                                <input type="text" name="publisher" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label>Ano</label>
+                                <input type="number" name="year" class="form-input" min="1000" max="2024">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>ISBN</label>
+                                <input type="text" name="isbn" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label>Categoria</label>
+                                <input type="text" name="category" class="form-input">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Descrição</label>
+                            <textarea name="description" class="form-input" rows="3"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Total de Cópias</label>
+                            <input type="number" name="total_copies" class="form-input" value="1" min="1">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Capa do Livro</label>
+                            <input type="file" name="cover_image" accept="image/*" class="form-input">
+                            <small class="form-help">Formatos: JPG, PNG (máx. 5MB)</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Upload do PDF do Livro *</label>
+                            <input type="file" name="pdf_file" accept="application/pdf" required class="form-input">
+                            <small class="form-help">Somente arquivos PDF (máx. 20MB)</small>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary" id="cancel-book-modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Adicionar Livro</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Edit Book Modal -->
+            <div id="edit-book-modal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Editar Livro</h3>
+                        <button class="close-btn" id="close-edit-modal">&times;</button>
+                    </div>
+                    <form id="edit-book-form">
+                        <input type="hidden" id="edit-book-id">
+
+                        <div class="form-group">
+                            <label>Título *</label>
+                            <input type="text" id="edit-book-title" required class="form-input">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Autor *</label>
+                            <input type="text" id="edit-book-author" required class="form-input">
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Editora</label>
+                                <input type="text" id="edit-book-publisher" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label>Ano</label>
+                                <input type="number" id="edit-book-year" class="form-input">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>ISBN</label>
+                                <input type="text" id="edit-book-isbn" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label>Categoria</label>
+                                <input type="text" id="edit-book-category" class="form-input">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Descrição</label>
+                            <textarea id="edit-book-description" class="form-input" rows="3"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Total de Cópias</label>
+                            <input type="number" id="edit-book-total-copies" class="form-input" min="1">
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary" id="cancel-edit-modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <script src="js/admin.js"></script>
+        </main>
+    </div>
+</body>
+
+</html>

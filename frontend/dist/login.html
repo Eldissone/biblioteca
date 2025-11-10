@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Biblioteca</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  <script src="src/js/script.js"></script>
+
+</head>
+<body class="bg-[#fcfaf8] min-h-screen">
+    <div class="flex items-center justify-center min-h-screen py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-md w-full space-y-8">
+            <div>
+                <h2 class="mt-6 text-center text-3xl font-extrabold text-[#1b130d]">
+                    Entrar na sua conta
+                </h2>
+                <p class="mt-2 text-center text-sm text-[#9a6c4c]">
+                    Acesse sua conta biblioteca
+                </p>
+            </div>
+            <form class="mt-8 space-y-6" id="login-form">
+                <div class="rounded-md shadow-sm -space-y-px">
+                    <div class="mb-4">
+                        <label for="username" class="block text-sm font-medium text-[#1b130d]">Usuário ou Email</label>
+                        <input id="username" name="username" type="text" required 
+                               class="appearance-none rounded-md relative block w-full px-3 py-2 border border-[#f3ece7] placeholder-[#9a6c4c] text-[#1b130d] focus:outline-none focus:ring-[#ff8200] focus:border-[#ff8200] focus:z-10 sm:text-sm"
+                               placeholder="Digite seu usuário ou email">
+                    </div>
+                    <div class="mb-4">
+                        <label for="password" class="block text-sm font-medium text-[#1b130d]">Senha</label>
+                        <input id="password" name="password" type="password" required 
+                               class="appearance-none rounded-md relative block w-full px-3 py-2 border border-[#f3ece7] placeholder-[#9a6c4c] text-[#1b130d] focus:outline-none focus:ring-[#ff8200] focus:border-[#ff8200] focus:z-10 sm:text-sm"
+                               placeholder="Digite sua senha">
+                    </div>
+                </div>
+
+                <div>
+                    <button type="submit" 
+                            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-[#ff8200] hover:bg-[#d67a3a] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#ff8200]">
+                        Entrar
+                    </button>
+                </div>
+
+                <div class="text-center">
+                    <a href="register.html" class="font-medium text-[#ff8200] hover:text-[#d67a3a]">
+                        Não tem uma conta? Registre-se
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+            
+            try {
+                const response = await fetch('http://localhost:3000/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: data.username,
+                        password: data.password
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    // Salvar token e dados
+                    localStorage.setItem('userToken', result.token);
+                    localStorage.setItem('userData', JSON.stringify(result.user));
+                    
+                    alert('Login realizado com sucesso!');
+                    window.location.href = 'index.html';
+                } else {
+                    alert(result.error || 'Usuário ou senha inválidos');
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro ao conectar com o servidor');
+            }
+        });
+    </script>
+</body>
+</html>
