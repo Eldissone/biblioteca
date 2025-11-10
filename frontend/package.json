@@ -1,9 +1,9 @@
 {
-  "name": "Bib_Oku_DBness-frontend",
+  "name": "Bib_Oku_DB-frontend",
   "version": "1.0.0",
   "scripts": {
     "dev": "vite",
-    "build": "npx vite build",
+    "build": "vite build",
     "preview": "vite preview"
   },
   "devDependencies": {
