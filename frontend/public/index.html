@@ -20,8 +20,6 @@
   <link rel="stylesheet" href="../src/styles/index.css" />
   <link rel="stylesheet" href="../src/styles/style.css" />
   <script src="../src/js/script.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
-
 
   <style>
     .hidden {
@@ -34,17 +32,16 @@
 
     /* Estilos para responsividade móvel */
     @media (max-width: 768px) {
-
       /* Header responsivo */
       header {
         padding: 10px 15px !important;
         flex-wrap: wrap;
       }
-
+      
       .logo img {
         max-height: 40px;
       }
-
+      
       /* Menu hamburguer */
       .mobile-menu-toggle {
         display: block !important;
@@ -54,11 +51,11 @@
         cursor: pointer;
         color: #1b130d;
       }
-
+      
       .desktop-nav {
         display: none;
       }
-
+      
       .mobile-nav {
         display: none;
         width: 100%;
@@ -68,106 +65,104 @@
         border-top: 1px solid #f3ece7;
         margin-top: 10px;
       }
-
+      
       .mobile-nav.active {
         display: flex;
       }
-
+      
       .mobile-nav a {
         padding: 12px 15px;
         border-bottom: 1px solid #f3ece7;
       }
-
+      
       /* Conteúdo principal */
       .px-20 {
         padding-left: 15px !important;
         padding-right: 15px !important;
       }
-
+      
       .layout-content-container {
         max-width: 100% !important;
       }
-
+      
       /* Hero section */
       .hero-section {
         padding: 20px 15px !important;
         min-height: 400px !important;
       }
-
+      
       .hero-section h1 {
         font-size: 28px !important;
         line-height: 1.2 !important;
       }
-
+      
       .hero-section h2 {
         font-size: 16px !important;
       }
-
+      
       /* Seções de livros */
       h2 {
         font-size: 20px !important;
         padding-left: 15px !important;
         padding-right: 15px !important;
       }
-
+      
       .book-scroll-container {
         padding: 10px 15px !important;
       }
-
+      
       /* Footer */
       footer .flex-wrap {
         gap: 15px !important;
       }
-
+      
       footer .min-w-40 {
         min-width: auto !important;
         flex: 1 0 45%;
       }
-
+      
       /* Ajustes gerais */
       .flex.gap-2#user-actions {
         margin-top: 10px;
         width: 100%;
         justify-content: center;
       }
-
+      
       #userInitial {
         margin-top: 10px;
       }
     }
-
+    
     @media (max-width: 480px) {
       .hero-section {
         min-height: 350px !important;
       }
-
+      
       .hero-section h1 {
         font-size: 24px !important;
       }
-
+      
       footer .min-w-40 {
         flex: 1 0 100%;
       }
     }
-
+    
     /* Estilos base para o menu hamburguer */
     .mobile-menu-toggle {
       display: none;
     }
-
+    
     .mobile-nav {
       display: none;
     }
-
+    
     /* Melhorias para toque em dispositivos móveis */
-    button,
-    a {
+    button, a {
       -webkit-tap-highlight-color: transparent;
     }
-
+    
     /* Melhorias de acessibilidade para foco */
-    button:focus,
-    a:focus {
+    button:focus, a:focus {
       outline: 2px solid #ff8200;
       outline-offset: 2px;
     }
@@ -183,12 +178,12 @@
         <div class="flex items-center gap-4 text-[#1b130d] logo">
           <img src="../public/assets/logos/Okukulanaua_Logo.png" alt="logo">
         </div>
-
+        
         <!-- Botão do menu hamburguer para mobile -->
         <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Abrir menu">
           ☰
         </button>
-
+        
         <nav class="desktop-nav flex flex-1 justify-end gap-8" role="navigation" aria-label="Menu principal">
           <div class="flex items-center gap-9">
             <a class="text-[#1b130d] text-sm font-medium text-[#ff8200] font-semibold transition-colors"
@@ -205,10 +200,10 @@
           <div
             class="hidden h-12 bg-[#ff8200] rounded-full cursor-pointer flex items-center justify-center text-white font-bold text-lg"
             id="userInitial">
-
+            
           </div>
         </nav>
-
+        
         <!-- Menu móvel -->
         <nav class="mobile-nav" id="mobileNav" role="navigation" aria-label="Menu móvel">
           <a class="text-[#1b130d] text-base font-medium text-[#ff8200] font-semibold transition-colors py-3"
@@ -334,29 +329,29 @@
 
   <script>
     // Script para o menu hamburguer
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function() {
       const mobileMenuToggle = document.getElementById('mobileMenuToggle');
       const mobileNav = document.getElementById('mobileNav');
-
+      
       if (mobileMenuToggle && mobileNav) {
-        mobileMenuToggle.addEventListener('click', function () {
+        mobileMenuToggle.addEventListener('click', function() {
           mobileNav.classList.toggle('active');
           // Alternar ícone do menu
           mobileMenuToggle.textContent = mobileNav.classList.contains('active') ? '✕' : '☰';
         });
-
+        
         // Fechar menu ao clicar em um link
         const mobileLinks = mobileNav.querySelectorAll('a');
         mobileLinks.forEach(link => {
-          link.addEventListener('click', function () {
+          link.addEventListener('click', function() {
             mobileNav.classList.remove('active');
             mobileMenuToggle.textContent = '☰';
           });
         });
       }
-
+      
       // Fechar menu ao redimensionar a janela para desktop
-      window.addEventListener('resize', function () {
+      window.addEventListener('resize', function() {
         if (window.innerWidth > 768 && mobileNav) {
           mobileNav.classList.remove('active');
           if (mobileMenuToggle) {
@@ -365,14 +360,14 @@
         }
       });
     });
-
+    
     // Função para fechar o leitor de PDF (mantida do código original)
     function closeReader() {
       document.getElementById('pdf-reader-container').classList.add('hidden');
     }
   </script>
 
-  <script src="./assets/js/script.js" type="module"></script>
+  <script src="./assets/js/script.js"></script>
 
 </body>
 

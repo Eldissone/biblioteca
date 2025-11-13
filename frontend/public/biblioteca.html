@@ -20,7 +20,6 @@
   <link rel="stylesheet" href="../src/styles/index.css">
   <link rel="stylesheet" href="../src/styles/style.css">
   <script src="../src/js/script.js" defer></script>
-  <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <style>
     .hidden {
@@ -108,8 +107,7 @@
       </div>
       <nav class="flex items-center gap-9">
         <a class="text-[#1b130d] text-sm font-medium hover:text-[#ff8200]" href="index.html">Home</a>
-        <a class="text-[#1b130d] text-sm font-medium text-[#ff8200] font-semibold transition-colors"
-          href="biblioteca.html">Biblioteca</a>
+        <a class="text-[#1b130d] text-sm font-medium text-[#ff8200] font-semibold transition-colors" href="biblioteca.html">Biblioteca</a>
         <a class="text-[#1b130d] text-sm font-medium hover:text-[#ff8200]" href="comunidade.html">Comunidade</a>
       </nav>
     </div>
@@ -225,7 +223,7 @@
     </div>
   </div>
 
-  <script type="module">
+  <script>
     // Configuração da API
     const API_BASE_URL = 'http://localhost:3000/api';
 
@@ -253,7 +251,7 @@
     const closeModal = document.getElementById('closeModal');
 
     // Inicialização
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function() {
       console.log('🚀 Inicializando biblioteca...');
       loadBooks();
       setupEventListeners();
@@ -262,7 +260,7 @@
     // Configurar event listeners
     function setupEventListeners() {
       console.log('🔧 Configurando event listeners...');
-
+      
       // Pesquisa
       if (searchInput) {
         searchInput.addEventListener('input', debounce(handleSearch, 300));
@@ -282,7 +280,7 @@
       if (closeModal) {
         closeModal.addEventListener('click', () => bookModal.classList.add('hidden'));
       }
-
+      
       if (bookModal) {
         bookModal.addEventListener('click', (e) => {
           if (e.target === bookModal) bookModal.classList.add('hidden');
@@ -337,7 +335,7 @@
         option.addEventListener('click', () => {
           const value = option.dataset[filterType];
           currentFilters[filterType] = value;
-
+          
           // Atualizar texto do botão
           const button = document.getElementById(filterType + 'Filter');
           if (button) {
@@ -346,7 +344,7 @@
               span.textContent = getFilterButtonText(option.textContent, filterType);
             }
           }
-
+          
           // Fechar dropdown e aplicar filtros
           optionsElement.classList.add('hidden');
           currentPage = 1;
@@ -359,10 +357,10 @@
     function getFilterButtonText(text, filterType) {
       const defaultTexts = {
         'category': 'Categoria',
-        'year': 'Ano',
+        'year': 'Ano', 
         'sort': 'Ordenar'
       };
-
+      
       if (text === 'Todas as Categorias' || text === 'Todos os Anos' || text === 'Mais Recentes') {
         return defaultTexts[filterType];
       }
@@ -385,18 +383,18 @@
       try {
         console.log('📚 Carregando livros...');
         if (productsGrid) productsGrid.classList.add('loading');
-
+        
         const response = await fetch(`${API_BASE_URL}/books`);
         if (!response.ok) throw new Error('Erro ao carregar livros');
-
+        
         const books = await response.json();
         currentBooks = books;
         console.log(`✅ ${books.length} livros carregados`);
-
+        
         // Carregar opções de filtro
         populateFilterOptions(books);
         applyFilters();
-
+        
       } catch (error) {
         console.error('❌ Erro ao carregar livros:', error);
         if (productsGrid) {
@@ -417,7 +415,7 @@
     // Popular opções de filtro
     function populateFilterOptions(books) {
       console.log('🎛️ Populando opções de filtro...');
-
+      
       // Categorias
       const categories = [...new Set(books.map(book => book.category).filter(Boolean))];
       const categoryOptions = document.getElementById('categoryOptions');
@@ -425,7 +423,7 @@
         // Manter "Todas as Categorias" e adicionar novas
         const existingOptions = categoryOptions.querySelectorAll('.filter-option');
         const existingCategories = Array.from(existingOptions).map(opt => opt.dataset.category);
-
+        
         categories.forEach(cat => {
           if (!existingCategories.includes(cat)) {
             const option = document.createElement('div');
@@ -435,7 +433,7 @@
             categoryOptions.appendChild(option);
           }
         });
-
+        
         // Reconectar eventos
         setupFilterOptions(categoryOptions, 'category');
       }
@@ -447,7 +445,7 @@
         // Manter "Todos os Anos" e adicionar novos
         const existingOptions = yearOptions.querySelectorAll('.filter-option');
         const existingYears = Array.from(existingOptions).map(opt => opt.dataset.year);
-
+        
         years.forEach(year => {
           if (!existingYears.includes(year.toString())) {
             const option = document.createElement('div');
@@ -457,7 +455,7 @@
             yearOptions.appendChild(option);
           }
         });
-
+        
         // Reconectar eventos
         setupFilterOptions(yearOptions, 'year');
       }
@@ -466,13 +464,13 @@
     // Aplicar filtros
     function applyFilters() {
       console.log('🔍 Aplicando filtros:', currentFilters);
-
+      
       let filtered = [...currentBooks];
 
       // Filtro de pesquisa
       if (currentFilters.search) {
         const searchTerm = currentFilters.search.toLowerCase();
-        filtered = filtered.filter(book =>
+        filtered = filtered.filter(book => 
           book.title.toLowerCase().includes(searchTerm) ||
           (book.author && book.author.toLowerCase().includes(searchTerm)) ||
           (book.category && book.category.toLowerCase().includes(searchTerm))
@@ -522,7 +520,7 @@
     // Renderizar livros
     function renderBooks() {
       if (!productsGrid) return;
-
+      
       const startIndex = (currentPage - 1) * booksPerPage;
       const endIndex = startIndex + booksPerPage;
       const booksToShow = filteredBooks.slice(startIndex, endIndex);
@@ -531,10 +529,10 @@
         productsGrid.innerHTML = `
           <div class="col-span-full text-center py-8">
             <p class="text-gray-600">Nenhum livro encontrado com os filtros atuais.</p>
-            ${Object.values(currentFilters).some(filter => filter) ?
-            '<button onclick="clearFilters()" class="mt-2 text-[#ff8200] hover:underline">Limpar filtros</button>' :
-            ''
-          }
+            ${Object.values(currentFilters).some(filter => filter) ? 
+              '<button onclick="clearFilters()" class="mt-2 text-[#ff8200] hover:underline">Limpar filtros</button>' : 
+              ''
+            }
           </div>
         `;
         return;
@@ -566,9 +564,9 @@
       try {
         const response = await fetch(`${API_BASE_URL}/books/${bookId}`);
         if (!response.ok) throw new Error('Erro ao carregar detalhes do livro');
-
+        
         const book = await response.json();
-
+        
         if (modalTitle) modalTitle.textContent = book.title;
         if (modalContent) {
           modalContent.innerHTML = `
@@ -606,7 +604,7 @@
             ` : ''}
           `;
         }
-
+        
         if (bookModal) bookModal.classList.remove('hidden');
       } catch (error) {
         console.error('Erro:', error);
@@ -617,16 +615,16 @@
     // Atualizar paginação
     function updatePagination() {
       if (!pagination) return;
-
+      
       const totalPages = Math.ceil(filteredBooks.length / booksPerPage);
-
+      
       if (totalPages <= 1) {
         pagination.innerHTML = '';
         return;
       }
 
       let paginationHTML = '';
-
+      
       // Botão anterior
       if (currentPage > 1) {
         paginationHTML += `<button class="pagination-btn" onclick="changePage(${currentPage - 1})">‹</button>`;
@@ -665,20 +663,20 @@
     // Atualizar contador de produtos
     function updateProductCount() {
       if (!productCount) return;
-
+      
       const total = filteredBooks.length;
       const start = (currentPage - 1) * booksPerPage + 1;
       const end = Math.min(currentPage * booksPerPage, total);
-
-      productCount.textContent = total === 0
-        ? 'Nenhum livro encontrado'
+      
+      productCount.textContent = total === 0 
+        ? 'Nenhum livro encontrado' 
         : `Mostrando ${start}-${end} de ${total} livro${total !== 1 ? 's' : ''}`;
     }
 
     // Atualizar botão de limpar filtros
     function updateClearFiltersButton() {
       if (!clearFiltersBtn) return;
-
+      
       const hasActiveFilters = currentFilters.search || currentFilters.category || currentFilters.year || currentFilters.sort !== 'newest';
       clearFiltersBtn.classList.toggle('hidden', !hasActiveFilters);
     }
@@ -698,9 +696,9 @@
         year: '',
         sort: 'newest'
       };
-
+      
       if (searchInput) searchInput.value = '';
-
+      
       // Resetar botões de filtro visualmente
       document.querySelectorAll('.filter-dropdown button').forEach(button => {
         const span = button.querySelector('span');
@@ -708,7 +706,7 @@
         else if (button.id === 'yearFilter') span.textContent = 'Ano';
         else if (button.id === 'sortFilter') span.textContent = 'Ordenar';
       });
-
+      
       currentPage = 1;
       applyFilters();
     }
@@ -733,5 +731,4 @@
     window.clearFilters = clearFilters;
   </script>
 </body>
-
 </html>

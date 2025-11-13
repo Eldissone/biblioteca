@@ -142,3 +142,5 @@ function readNow(title, pdfUrl) {
     reader.src = pdfUrl;
     document.getElementById("pdf-reader-container").classList.remove("hidden");
 }
+
+

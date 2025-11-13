@@ -147,7 +147,6 @@ function openCheckout(title, image, pdfUrl) {
   console.log("Pedido:", selectedBook);
 }
 
-
 // Ler PDF no leitor interno
 function readNow(title, pdfUrl) {
   if (!pdfUrl) return alert("PDF não disponível!");
