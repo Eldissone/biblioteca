@@ -21,6 +21,13 @@
   <link rel="stylesheet" href="../src/styles/style.css">
   <script src="../src/js/script.js" defer></script>
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  
+  <!-- PDF.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+  </script>
+
   <style>
     .hidden {
       display: none;
@@ -95,6 +102,235 @@
       opacity: 0.6;
       pointer-events: none;
     }
+
+    /* Estilos para o modal de leitura com PDF.js */
+    .pdf-container {
+      position: relative;
+      width: 100%;
+      height: 70vh;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      overflow: auto;
+      background: #f9fafb;
+    }
+
+    .pdf-viewer-container {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    #pdfCanvas {
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      border: 1px solid #e5e7eb;
+      max-width: 100%;
+      height: auto;
+    }
+
+    .pdf-controls {
+      position: sticky;
+      top: 0;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 12px;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      z-index: 20;
+      backdrop-filter: blur(10px);
+    }
+
+    .pdf-control-btn {
+      background: #ff8200;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      min-width: 80px;
+    }
+
+    .pdf-control-btn:hover:not(:disabled) {
+      background: #e67300;
+      transform: translateY(-1px);
+    }
+
+    .pdf-control-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .page-info {
+      background: #1b130d;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      min-width: 120px;
+      text-align: center;
+    }
+
+    .zoom-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .zoom-btn {
+      background: #1b130d;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 18px;
+      font-weight: bold;
+      transition: background 0.2s ease;
+    }
+
+    .zoom-btn:hover {
+      background: #333;
+    }
+
+    .zoom-level {
+      font-size: 14px;
+      font-weight: 500;
+      color: #1b130d;
+      min-width: 60px;
+      text-align: center;
+    }
+
+    /* Loading para PDF */
+    .pdf-loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: #6b7280;
+    }
+
+    .spinner {
+      border: 3px solid #f3f4f6;
+      border-top: 3px solid #ff8200;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin-bottom: 16px;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* Proteções contra download */
+    .no-select {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+
+    .no-download {
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      -khtml-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+
+    /* Modal de leitura em tela cheia */
+    .fullscreen-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: white;
+      z-index: 1000;
+      display: none;
+      flex-direction: column;
+    }
+
+    .fullscreen-modal.active {
+      display: flex;
+    }
+
+    .fullscreen-header {
+      background: #1b130d;
+      color: white;
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .fullscreen-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .fullscreen-pdf-container {
+      flex: 1;
+      position: relative;
+      overflow: auto;
+    }
+
+    .fullscreen-controls {
+      position: sticky;
+      top: 0;
+      background: rgba(27, 19, 13, 0.95);
+      padding: 12px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      z-index: 20;
+    }
+
+    /* Mensagem de erro */
+    .pdf-error {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: #dc2626;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .pdf-error h4 {
+      font-size: 18px;
+      margin-bottom: 8px;
+    }
+
+    .pdf-error p {
+      color: #6b7280;
+      margin-bottom: 16px;
+    }
   </style>
 </head>
 
@@ -107,7 +343,8 @@
       </div>
       <nav class="flex items-center gap-9">
         <a class="text-[#1b130d] text-sm font-medium hover:text-[#ff8200]" href="index.html">Home</a>
-        <a class="text-[#1b130d] text-sm font-medium text-[#ff8200] font-semibold transition-colors" href="biblioteca.html">Biblioteca</a>
+        <a class="text-[#1b130d] text-sm font-medium text-[#ff8200] font-semibold transition-colors"
+          href="biblioteca.html">Biblioteca</a>
         <a class="text-[#1b130d] text-sm font-medium hover:text-[#ff8200]" href="comunidade.html">Comunidade</a>
       </nav>
     </div>
@@ -223,6 +460,74 @@
     </div>
   </div>
 
+  <!-- MODAL DE LEITURA COM PDF.js -->
+  <div id="readingModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-lg p-6 max-w-6xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col">
+      <div class="flex justify-between items-center mb-4">
+        <h3 id="readingTitle" class="text-xl font-bold text-[#1b130d]"></h3>
+        <div class="flex gap-2">
+          <button id="fullscreenBtn" class="pdf-control-btn">Tela Cheia</button>
+          <button id="closeReadingModal" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+        </div>
+      </div>
+
+      <div class="pdf-container no-select no-download">
+        <div id="pdfLoading" class="pdf-loading">
+          <div class="spinner"></div>
+          <p>Carregando PDF...</p>
+        </div>
+
+        <div id="pdfError" class="pdf-error hidden">
+          <h4>Erro ao carregar PDF</h4>
+          <p>Não foi possível carregar o arquivo PDF. Tente novamente mais tarde.</p>
+          <button onclick="retryLoadPdf()" class="pdf-control-btn">Tentar Novamente</button>
+        </div>
+
+        <div class="pdf-controls">
+          <button id="prevPage" class="pdf-control-btn" disabled>‹ Anterior</button>
+          <span id="pageInfo" class="page-info">Página 1 de 1</span>
+          <button id="nextPage" class="pdf-control-btn">Próxima ›</button>
+          
+          <div class="zoom-controls">
+            <button id="zoomOut" class="zoom-btn" title="Zoom Out">−</button>
+            <span id="zoomLevel" class="zoom-level">120%</span>
+            <button id="zoomIn" class="zoom-btn" title="Zoom In">+</button>
+          </div>
+        </div>
+
+        <div class="pdf-viewer-container">
+          <canvas id="pdfCanvas"></canvas>
+        </div>
+      </div>
+
+      <div class="mt-4 text-sm text-gray-600">
+        <p>⚠️ <strong>Protegido contra download:</strong> Este PDF está em modo de visualização segura.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE LEITURA EM TELA CHEIA -->
+  <div id="fullscreenModal" class="fullscreen-modal">
+    <div class="fullscreen-header">
+      <h3 id="fullscreenTitle" class="text-lg font-bold"></h3>
+      <div class="flex gap-2">
+        <button id="exitFullscreen" class="pdf-control-btn">Sair da Tela Cheia (ESC)</button>
+      </div>
+    </div>
+    <div class="fullscreen-content">
+      <div class="fullscreen-pdf-container no-select no-download">
+        <div class="fullscreen-controls">
+          <button id="fullscreenPrevPage" class="pdf-control-btn" disabled>‹ Anterior</button>
+          <span id="fullscreenPageInfo" class="page-info">Página 1 de 1</span>
+          <button id="fullscreenNextPage" class="pdf-control-btn">Próxima ›</button>
+        </div>
+        <div class="pdf-viewer-container">
+          <canvas id="fullscreenPdfCanvas"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     // Configuração da API
     const API_BASE_URL = 'http://localhost:3000/api';
@@ -239,6 +544,14 @@
       sort: 'newest'
     };
 
+    // Estado do leitor de PDF
+    let currentPdf = null;
+    let currentPdfDoc = null;
+    let currentPdfPage = 1;
+    let totalPdfPages = 1;
+    let pdfScale = 1.2;
+    let currentPdfUrl = '';
+
     // Elementos DOM
     const productsGrid = document.getElementById('productsGrid');
     const productCount = document.getElementById('productCount');
@@ -250,17 +563,42 @@
     const modalContent = document.getElementById('modalContent');
     const closeModal = document.getElementById('closeModal');
 
+    // Elementos do modal de leitura
+    const readingModal = document.getElementById('readingModal');
+    const readingTitle = document.getElementById('readingTitle');
+    const pdfCanvas = document.getElementById('pdfCanvas');
+    const pdfLoading = document.getElementById('pdfLoading');
+    const pdfError = document.getElementById('pdfError');
+    const prevPageBtn = document.getElementById('prevPage');
+    const nextPageBtn = document.getElementById('nextPage');
+    const pageInfo = document.getElementById('pageInfo');
+    const zoomInBtn = document.getElementById('zoomIn');
+    const zoomOutBtn = document.getElementById('zoomOut');
+    const zoomLevel = document.getElementById('zoomLevel');
+    const closeReadingModal = document.getElementById('closeReadingModal');
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+
+    // Elementos do modal em tela cheia
+    const fullscreenModal = document.getElementById('fullscreenModal');
+    const fullscreenTitle = document.getElementById('fullscreenTitle');
+    const fullscreenPdfCanvas = document.getElementById('fullscreenPdfCanvas');
+    const fullscreenPrevPageBtn = document.getElementById('fullscreenPrevPage');
+    const fullscreenNextPageBtn = document.getElementById('fullscreenNextPage');
+    const fullscreenPageInfo = document.getElementById('fullscreenPageInfo');
+    const exitFullscreenBtn = document.getElementById('exitFullscreen');
+
     // Inicialização
-    document.addEventListener('DOMContentLoaded', function() {
-      console.log('🚀 Inicializando biblioteca...');
+    document.addEventListener('DOMContentLoaded', function () {
+      console.log('🚀 Inicializando biblioteca com PDF.js...');
       loadBooks();
       setupEventListeners();
+      setupPdfViewer();
     });
 
     // Configurar event listeners
     function setupEventListeners() {
       console.log('🔧 Configurando event listeners...');
-      
+
       // Pesquisa
       if (searchInput) {
         searchInput.addEventListener('input', debounce(handleSearch, 300));
@@ -276,21 +614,99 @@
         clearFiltersBtn.addEventListener('click', clearFilters);
       }
 
-      // Modal
+      // Modais
       if (closeModal) {
         closeModal.addEventListener('click', () => bookModal.classList.add('hidden'));
       }
-      
+
       if (bookModal) {
         bookModal.addEventListener('click', (e) => {
           if (e.target === bookModal) bookModal.classList.add('hidden');
         });
       }
 
-      // Fechar modal com ESC
+      if (closeReadingModal) {
+        closeReadingModal.addEventListener('click', closeReadingModalHandler);
+      }
+
+      if (readingModal) {
+        readingModal.addEventListener('click', (e) => {
+          if (e.target === readingModal) closeReadingModalHandler();
+        });
+      }
+
+      if (exitFullscreenBtn) {
+        exitFullscreenBtn.addEventListener('click', exitFullscreen);
+      }
+
+      if (fullscreenBtn) {
+        fullscreenBtn.addEventListener('click', enterFullscreen);
+      }
+
+      // Fechar modais com ESC
       document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && bookModal) bookModal.classList.add('hidden');
+        if (e.key === 'Escape') {
+          if (bookModal) bookModal.classList.add('hidden');
+          if (readingModal) closeReadingModalHandler();
+          if (fullscreenModal.classList.contains('active')) exitFullscreen();
+        }
       });
+
+      // Prevenir ações de contexto (botão direito) no PDF
+      document.addEventListener('contextmenu', (e) => {
+        if (e.target.closest('.pdf-container') || e.target.closest('.fullscreen-pdf-container')) {
+          e.preventDefault();
+          showDownloadWarning();
+          return false;
+        }
+      });
+
+      // Prevenir arrastar e soltar
+      document.addEventListener('dragstart', (e) => {
+        if (e.target.closest('.pdf-container') || e.target.closest('.fullscreen-pdf-container')) {
+          e.preventDefault();
+          return false;
+        }
+      });
+
+      // Prevenir download via teclado
+      document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'p')) {
+          if (readingModal.classList.contains('hidden') === false ||
+            fullscreenModal.classList.contains('active')) {
+            e.preventDefault();
+            showDownloadWarning();
+            return false;
+          }
+        }
+      });
+    }
+
+    // Configurar o visualizador de PDF
+    function setupPdfViewer() {
+      // Controles de página
+      if (prevPageBtn) {
+        prevPageBtn.addEventListener('click', () => changePdfPage(-1));
+      }
+      if (nextPageBtn) {
+        nextPageBtn.addEventListener('click', () => changePdfPage(1));
+      }
+
+      // Controles de zoom
+      if (zoomInBtn) {
+        zoomInBtn.addEventListener('click', () => changeZoom(0.2));
+      }
+      if (zoomOutBtn) {
+        zoomOutBtn.addEventListener('click', () => changeZoom(-0.2));
+      }
+
+      // Controles de tela cheia
+      if (fullscreenPrevPageBtn) {
+        fullscreenPrevPageBtn.addEventListener('click', () => changeFullscreenPdfPage(-1));
+      }
+      if (fullscreenNextPageBtn) {
+        fullscreenNextPageBtn.addEventListener('click', () => changeFullscreenPdfPage(1));
+      }
     }
 
     // Configurar dropdown de filtros
@@ -309,34 +725,27 @@
         closeOtherDropdowns(optionsId);
       });
 
-      // Fechar dropdown ao clicar fora
       document.addEventListener('click', () => {
         options.classList.add('hidden');
       });
 
-      // Prevenir fechamento ao clicar no dropdown
       options.addEventListener('click', (e) => {
         e.stopPropagation();
       });
 
-      // Configurar eventos para opções
       setupFilterOptions(options, filterType);
     }
 
-    // Configurar eventos para opções de filtro
     function setupFilterOptions(optionsElement, filterType) {
-      // Remover event listeners existentes para evitar duplicação
       optionsElement.querySelectorAll('.filter-option').forEach(option => {
         option.replaceWith(option.cloneNode(true));
       });
 
-      // Adicionar novos event listeners
       optionsElement.querySelectorAll('.filter-option').forEach(option => {
         option.addEventListener('click', () => {
           const value = option.dataset[filterType];
           currentFilters[filterType] = value;
-          
-          // Atualizar texto do botão
+
           const button = document.getElementById(filterType + 'Filter');
           if (button) {
             const span = button.querySelector('span');
@@ -344,8 +753,7 @@
               span.textContent = getFilterButtonText(option.textContent, filterType);
             }
           }
-          
-          // Fechar dropdown e aplicar filtros
+
           optionsElement.classList.add('hidden');
           currentPage = 1;
           applyFilters();
@@ -353,21 +761,19 @@
       });
     }
 
-    // Texto do botão de filtro
     function getFilterButtonText(text, filterType) {
       const defaultTexts = {
         'category': 'Categoria',
-        'year': 'Ano', 
+        'year': 'Ano',
         'sort': 'Ordenar'
       };
-      
+
       if (text === 'Todas as Categorias' || text === 'Todos os Anos' || text === 'Mais Recentes') {
         return defaultTexts[filterType];
       }
       return text;
     }
 
-    // Fechar outros dropdowns
     function closeOtherDropdowns(exceptId) {
       const dropdowns = ['categoryOptions', 'yearOptions', 'sortOptions'];
       dropdowns.forEach(id => {
@@ -383,18 +789,17 @@
       try {
         console.log('📚 Carregando livros...');
         if (productsGrid) productsGrid.classList.add('loading');
-        
+
         const response = await fetch(`${API_BASE_URL}/books`);
         if (!response.ok) throw new Error('Erro ao carregar livros');
-        
+
         const books = await response.json();
         currentBooks = books;
         console.log(`✅ ${books.length} livros carregados`);
-        
-        // Carregar opções de filtro
+
         populateFilterOptions(books);
         applyFilters();
-        
+
       } catch (error) {
         console.error('❌ Erro ao carregar livros:', error);
         if (productsGrid) {
@@ -415,15 +820,13 @@
     // Popular opções de filtro
     function populateFilterOptions(books) {
       console.log('🎛️ Populando opções de filtro...');
-      
-      // Categorias
+
       const categories = [...new Set(books.map(book => book.category).filter(Boolean))];
       const categoryOptions = document.getElementById('categoryOptions');
       if (categoryOptions) {
-        // Manter "Todas as Categorias" e adicionar novas
         const existingOptions = categoryOptions.querySelectorAll('.filter-option');
         const existingCategories = Array.from(existingOptions).map(opt => opt.dataset.category);
-        
+
         categories.forEach(cat => {
           if (!existingCategories.includes(cat)) {
             const option = document.createElement('div');
@@ -433,19 +836,16 @@
             categoryOptions.appendChild(option);
           }
         });
-        
-        // Reconectar eventos
+
         setupFilterOptions(categoryOptions, 'category');
       }
 
-      // Anos
       const years = [...new Set(books.map(book => book.year).filter(year => year && year > 0))].sort((a, b) => b - a);
       const yearOptions = document.getElementById('yearOptions');
       if (yearOptions) {
-        // Manter "Todos os Anos" e adicionar novos
         const existingOptions = yearOptions.querySelectorAll('.filter-option');
         const existingYears = Array.from(existingOptions).map(opt => opt.dataset.year);
-        
+
         years.forEach(year => {
           if (!existingYears.includes(year.toString())) {
             const option = document.createElement('div');
@@ -455,8 +855,7 @@
             yearOptions.appendChild(option);
           }
         });
-        
-        // Reconectar eventos
+
         setupFilterOptions(yearOptions, 'year');
       }
     }
@@ -464,33 +863,26 @@
     // Aplicar filtros
     function applyFilters() {
       console.log('🔍 Aplicando filtros:', currentFilters);
-      
+
       let filtered = [...currentBooks];
 
-      // Filtro de pesquisa
       if (currentFilters.search) {
         const searchTerm = currentFilters.search.toLowerCase();
-        filtered = filtered.filter(book => 
+        filtered = filtered.filter(book =>
           book.title.toLowerCase().includes(searchTerm) ||
           (book.author && book.author.toLowerCase().includes(searchTerm)) ||
           (book.category && book.category.toLowerCase().includes(searchTerm))
         );
-        console.log(`📖 Após pesquisa "${currentFilters.search}": ${filtered.length} livros`);
       }
 
-      // Filtro de categoria
       if (currentFilters.category) {
         filtered = filtered.filter(book => book.category === currentFilters.category);
-        console.log(`🏷️ Após categoria "${currentFilters.category}": ${filtered.length} livros`);
       }
 
-      // Filtro de ano
       if (currentFilters.year) {
         filtered = filtered.filter(book => book.year == currentFilters.year);
-        console.log(`📅 Após ano "${currentFilters.year}": ${filtered.length} livros`);
       }
 
-      // Ordenação
       switch (currentFilters.sort) {
         case 'title-asc':
           filtered.sort((a, b) => a.title.localeCompare(b.title));
@@ -520,7 +912,7 @@
     // Renderizar livros
     function renderBooks() {
       if (!productsGrid) return;
-      
+
       const startIndex = (currentPage - 1) * booksPerPage;
       const endIndex = startIndex + booksPerPage;
       const booksToShow = filteredBooks.slice(startIndex, endIndex);
@@ -529,10 +921,10 @@
         productsGrid.innerHTML = `
           <div class="col-span-full text-center py-8">
             <p class="text-gray-600">Nenhum livro encontrado com os filtros atuais.</p>
-            ${Object.values(currentFilters).some(filter => filter) ? 
-              '<button onclick="clearFilters()" class="mt-2 text-[#ff8200] hover:underline">Limpar filtros</button>' : 
-              ''
-            }
+            ${Object.values(currentFilters).some(filter => filter) ?
+            '<button onclick="clearFilters()" class="mt-2 text-[#ff8200] hover:underline">Limpar filtros</button>' :
+            ''
+          }
           </div>
         `;
         return;
@@ -554,6 +946,12 @@
             <h3 class="font-semibold text-center text-sm mb-1 line-clamp-2" title="${book.title}">${book.title}</h3>
             <p class="text-xs text-gray-600 text-center">${book.author || 'Autor desconhecido'}</p>
             ${book.year ? `<p class="text-xs text-gray-500 mt-1">${book.year}</p>` : ''}
+            ${book.pdf_file ? `
+              <button onclick="event.stopPropagation(); openReadingModal(${book.id})" 
+                      class="mt-2 bg-[#ff8200] text-white px-3 py-1 rounded text-xs hover:bg-[#d67a32] transition-colors">
+                📖 Ler
+              </button>
+            ` : ''}
           </div>
         </div>
       `).join('');
@@ -564,9 +962,9 @@
       try {
         const response = await fetch(`${API_BASE_URL}/books/${bookId}`);
         if (!response.ok) throw new Error('Erro ao carregar detalhes do livro');
-        
+
         const book = await response.json();
-        
+
         if (modalTitle) modalTitle.textContent = book.title;
         if (modalContent) {
           modalContent.innerHTML = `
@@ -588,11 +986,10 @@
                 ${book.publisher ? `<p class="text-gray-600 mb-2"><strong>Editora:</strong> ${book.publisher}</p>` : ''}
                 ${book.isbn ? `<p class="text-gray-600 mb-2"><strong>ISBN:</strong> ${book.isbn}</p>` : ''}
                 ${book.pdf_file ? `
-                  <a href="http://localhost:3000${book.pdf_file}" 
-                     target="_blank" 
-                     class="inline-block bg-[#ff8200] text-white px-4 py-2 rounded-lg hover:bg-[#d67a32] transition-colors mt-4">
+                  <button onclick="openReadingModal(${book.id})" 
+                          class="inline-block bg-[#ff8200] text-white px-4 py-2 rounded-lg hover:bg-[#d67a32] transition-colors mt-4">
                     📖 Ler Livro
-                  </a>
+                  </button>
                 ` : '<p class="text-gray-500 mt-4">PDF não disponível</p>'}
               </div>
             </div>
@@ -604,7 +1001,7 @@
             ` : ''}
           `;
         }
-        
+
         if (bookModal) bookModal.classList.remove('hidden');
       } catch (error) {
         console.error('Erro:', error);
@@ -612,25 +1009,277 @@
       }
     }
 
+    // Abrir modal de leitura com PDF.js
+    async function openReadingModal(bookId) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/books/${bookId}`);
+        if (!response.ok) throw new Error('Erro ao carregar livro');
+
+        const book = await response.json();
+
+        if (!book.pdf_file) {
+          alert('Este livro não possui PDF disponível para leitura.');
+          return;
+        }
+
+        // Fechar modal de detalhes se estiver aberto
+        if (bookModal) bookModal.classList.add('hidden');
+
+        // Configurar modal de leitura
+        if (readingTitle) readingTitle.textContent = book.title;
+        if (fullscreenTitle) fullscreenTitle.textContent = book.title;
+
+        currentPdf = book;
+        currentPdfPage = 1;
+        pdfScale = 1.2;
+        currentPdfUrl = `http://localhost:3000${book.pdf_file}`;
+
+        // Mostrar loading e esconder erro
+        if (pdfLoading) {
+          pdfLoading.classList.remove('hidden');
+          pdfLoading.style.display = 'flex';
+        }
+        if (pdfError) pdfError.classList.add('hidden');
+        if (pdfCanvas) pdfCanvas.style.display = 'none';
+
+        // Mostrar modal de leitura
+        if (readingModal) readingModal.classList.remove('hidden');
+
+        // Carregar PDF
+        await loadPdf(currentPdfUrl);
+
+      } catch (error) {
+        console.error('Erro:', error);
+        showPdfError();
+      }
+    }
+
+    // Carregar PDF com PDF.js
+    async function loadPdf(pdfUrl) {
+      try {
+        console.log('📄 Carregando PDF:', pdfUrl);
+
+        const loadingTask = pdfjsLib.getDocument(pdfUrl);
+        currentPdfDoc = await loadingTask.promise;
+        
+        totalPdfPages = currentPdfDoc.numPages;
+        currentPdfPage = 1;
+
+        // Esconder loading e mostrar canvas
+        if (pdfLoading) pdfLoading.classList.add('hidden');
+        if (pdfCanvas) pdfCanvas.style.display = 'block';
+
+        // Renderizar primeira página
+        await renderPage(currentPdfPage);
+        
+        updatePdfControls();
+
+      } catch (error) {
+        console.error('❌ Erro ao carregar PDF:', error);
+        showPdfError();
+      }
+    }
+
+    // Renderizar página do PDF
+    async function renderPage(pageNumber) {
+      if (!currentPdfDoc) return;
+
+      try {
+        const page = await currentPdfDoc.getPage(pageNumber);
+        const canvas = pdfCanvas;
+        const ctx = canvas.getContext('2d');
+        
+        const viewport = page.getViewport({ scale: pdfScale });
+        
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        
+        const renderContext = {
+          canvasContext: ctx,
+          viewport: viewport
+        };
+        
+        await page.render(renderContext).promise;
+
+        // Atualizar controles
+        updatePdfControls();
+
+      } catch (error) {
+        console.error('Erro ao renderizar página:', error);
+      }
+    }
+
+    // Renderizar página em tela cheia
+    async function renderFullscreenPage(pageNumber) {
+      if (!currentPdfDoc) return;
+
+      try {
+        const page = await currentPdfDoc.getPage(pageNumber);
+        const canvas = fullscreenPdfCanvas;
+        const ctx = canvas.getContext('2d');
+        
+        // Ajustar escala para tela cheia
+        const fullscreenScale = Math.min(1.8, pdfScale * 1.2);
+        const viewport = page.getViewport({ scale: fullscreenScale });
+        
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        
+        const renderContext = {
+          canvasContext: ctx,
+          viewport: viewport
+        };
+        
+        await page.render(renderContext).promise;
+
+        // Atualizar controles da tela cheia
+        updateFullscreenPdfControls();
+
+      } catch (error) {
+        console.error('Erro ao renderizar página em tela cheia:', error);
+      }
+    }
+
+    // Mudar página do PDF
+    async function changePdfPage(delta) {
+      const newPage = currentPdfPage + delta;
+      if (newPage < 1 || newPage > totalPdfPages) return;
+      
+      currentPdfPage = newPage;
+      await renderPage(currentPdfPage);
+    }
+
+    // Mudar página do PDF em tela cheia
+    async function changeFullscreenPdfPage(delta) {
+      const newPage = currentPdfPage + delta;
+      if (newPage < 1 || newPage > totalPdfPages) return;
+      
+      currentPdfPage = newPage;
+      await renderFullscreenPage(currentPdfPage);
+    }
+
+    // Mudar zoom
+    async function changeZoom(delta) {
+      const newScale = pdfScale + delta;
+      if (newScale < 0.5 || newScale > 3) return;
+      
+      pdfScale = newScale;
+      if (zoomLevel) {
+        zoomLevel.textContent = `${Math.round(pdfScale * 100)}%`;
+      }
+      
+      await renderPage(currentPdfPage);
+    }
+
+    // Atualizar controles do PDF
+    function updatePdfControls() {
+      if (prevPageBtn) {
+        prevPageBtn.disabled = currentPdfPage <= 1;
+      }
+      if (nextPageBtn) {
+        nextPageBtn.disabled = currentPdfPage >= totalPdfPages;
+      }
+      if (pageInfo) {
+        pageInfo.textContent = `Página ${currentPdfPage} de ${totalPdfPages}`;
+      }
+      if (zoomLevel) {
+        zoomLevel.textContent = `${Math.round(pdfScale * 100)}%`;
+      }
+    }
+
+    // Atualizar controles do PDF em tela cheia
+    function updateFullscreenPdfControls() {
+      if (fullscreenPrevPageBtn) {
+        fullscreenPrevPageBtn.disabled = currentPdfPage <= 1;
+      }
+      if (fullscreenNextPageBtn) {
+        fullscreenNextPageBtn.disabled = currentPdfPage >= totalPdfPages;
+      }
+      if (fullscreenPageInfo) {
+        fullscreenPageInfo.textContent = `Página ${currentPdfPage} de ${totalPdfPages}`;
+      }
+    }
+
+    // Mostrar erro do PDF
+    function showPdfError() {
+      if (pdfLoading) pdfLoading.classList.add('hidden');
+      if (pdfError) {
+        pdfError.classList.remove('hidden');
+        pdfError.style.display = 'flex';
+      }
+    }
+
+    // Tentar carregar PDF novamente
+    function retryLoadPdf() {
+      if (currentPdfUrl) {
+        if (pdfError) pdfError.classList.add('hidden');
+        if (pdfLoading) {
+          pdfLoading.classList.remove('hidden');
+          pdfLoading.style.display = 'flex';
+        }
+        loadPdf(currentPdfUrl);
+      }
+    }
+
+    // Fechar modal de leitura
+    function closeReadingModalHandler() {
+      if (readingModal) readingModal.classList.add('hidden');
+      
+      // Limpar PDF
+      currentPdfDoc = null;
+      currentPdf = null;
+      currentPdfPage = 1;
+    }
+
+    // Entrar em tela cheia
+    async function enterFullscreen() {
+      if (!currentPdfDoc) return;
+
+      if (readingModal) readingModal.classList.add('hidden');
+      if (fullscreenModal) {
+        fullscreenModal.classList.add('active');
+        
+        // Renderizar página atual em tela cheia
+        await renderFullscreenPage(currentPdfPage);
+      }
+    }
+
+    // Sair da tela cheia
+    function exitFullscreen() {
+      if (fullscreenModal) {
+        fullscreenModal.classList.remove('active');
+      }
+      if (readingModal && currentPdf) {
+        readingModal.classList.remove('hidden');
+        // Re-renderizar a página no modal normal
+        renderPage(currentPdfPage);
+      }
+    }
+
+    // Mostrar aviso de download bloqueado
+    function showDownloadWarning() {
+      alert('⚠️ Download não permitido. Este recurso está disponível apenas para leitura online.');
+    }
+
+    // ===== FUNÇÕES DE PAGINAÇÃO E FILTROS (MANTIDAS) =====
+
     // Atualizar paginação
     function updatePagination() {
       if (!pagination) return;
-      
+
       const totalPages = Math.ceil(filteredBooks.length / booksPerPage);
-      
+
       if (totalPages <= 1) {
         pagination.innerHTML = '';
         return;
       }
 
       let paginationHTML = '';
-      
-      // Botão anterior
+
       if (currentPage > 1) {
         paginationHTML += `<button class="pagination-btn" onclick="changePage(${currentPage - 1})">‹</button>`;
       }
 
-      // Páginas
       for (let i = 1; i <= totalPages; i++) {
         if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
           paginationHTML += `
@@ -644,7 +1293,6 @@
         }
       }
 
-      // Botão próximo
       if (currentPage < totalPages) {
         paginationHTML += `<button class="pagination-btn" onclick="changePage(${currentPage + 1})">›</button>`;
       }
@@ -652,7 +1300,6 @@
       pagination.innerHTML = paginationHTML;
     }
 
-    // Mudar página
     function changePage(page) {
       currentPage = page;
       renderBooks();
@@ -660,35 +1307,31 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // Atualizar contador de produtos
     function updateProductCount() {
       if (!productCount) return;
-      
+
       const total = filteredBooks.length;
       const start = (currentPage - 1) * booksPerPage + 1;
       const end = Math.min(currentPage * booksPerPage, total);
-      
-      productCount.textContent = total === 0 
-        ? 'Nenhum livro encontrado' 
+
+      productCount.textContent = total === 0
+        ? 'Nenhum livro encontrado'
         : `Mostrando ${start}-${end} de ${total} livro${total !== 1 ? 's' : ''}`;
     }
 
-    // Atualizar botão de limpar filtros
     function updateClearFiltersButton() {
       if (!clearFiltersBtn) return;
-      
+
       const hasActiveFilters = currentFilters.search || currentFilters.category || currentFilters.year || currentFilters.sort !== 'newest';
       clearFiltersBtn.classList.toggle('hidden', !hasActiveFilters);
     }
 
-    // Manipular pesquisa
     function handleSearch(e) {
       currentFilters.search = e.target.value.trim();
       currentPage = 1;
       applyFilters();
     }
 
-    // Limpar filtros
     function clearFilters() {
       currentFilters = {
         search: '',
@@ -696,22 +1339,20 @@
         year: '',
         sort: 'newest'
       };
-      
+
       if (searchInput) searchInput.value = '';
-      
-      // Resetar botões de filtro visualmente
+
       document.querySelectorAll('.filter-dropdown button').forEach(button => {
         const span = button.querySelector('span');
         if (button.id === 'categoryFilter') span.textContent = 'Categoria';
         else if (button.id === 'yearFilter') span.textContent = 'Ano';
         else if (button.id === 'sortFilter') span.textContent = 'Ordenar';
       });
-      
+
       currentPage = 1;
       applyFilters();
     }
 
-    // Debounce para pesquisa
     function debounce(func, wait) {
       let timeout;
       return function executedFunction(...args) {
@@ -726,9 +1367,14 @@
 
     // Funções globais para o HTML
     window.openBookModal = openBookModal;
+    window.openReadingModal = openReadingModal;
     window.changePage = changePage;
     window.loadBooks = loadBooks;
     window.clearFilters = clearFilters;
+    window.enterFullscreen = enterFullscreen;
+    window.exitFullscreen = exitFullscreen;
+    window.retryLoadPdf = retryLoadPdf;
   </script>
 </body>
+
 </html>

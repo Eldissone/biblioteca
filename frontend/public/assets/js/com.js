@@ -95,7 +95,7 @@ const communityAPI = {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${userToken}`
                 },
-                body: JSON.stringify({ isOnline })          
+                body: JSON.stringify({ isOnline })
             });
 
             if (!response.ok) {
@@ -215,6 +215,8 @@ function logout() {
 
     localStorage.removeItem('userToken');
     localStorage.removeItem('userData');
+    sessionStorage.removeItem('userData');
+    window.location.href = '/login.html';
     userToken = null;
     userData = null;
     window.location.reload();

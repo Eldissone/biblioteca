@@ -5,7 +5,7 @@ let cartItems = [];
 
 const logo = document.querySelector(".logo")
 logo.addEventListener('click', () => {
-  window.location.href = "index.html";  
+  window.location.href = "index.html";
 })
 
 function isUserLoggedIn() {
@@ -63,6 +63,8 @@ function loadUserActions() {
 function logout() {
   localStorage.removeItem('userToken');
   localStorage.removeItem('userData');
+  sessionStorage.removeItem('userData');
+  window.location.href = '/login.html';
   userToken = null;
   userData = null;
   cartItems = [];
