@@ -19,9 +19,9 @@
   <link rel="icon" href="favicon.ico" />
   <link rel="stylesheet" href="src/styles/index.css" />
   <link rel="stylesheet" href="src/styles/style.css" />
+  <link rel="stylesheet" href="src/styles/responsivo.css" />
   <!-- style-js -->
   <script src="src/js/script.js"></script>
-
   <style>
     .hidden {
       display: none;
@@ -29,6 +29,150 @@
 
     .active {
       display: flex !important;
+    }
+
+    /* Estilos para responsividade móvel */
+    @media (max-width: 768px) {
+
+      /* Header responsivo */
+      header {
+        padding: 10px 15px !important;
+        flex-wrap: wrap;
+      }
+
+      .logo img {
+        max-height: 40px;
+      }
+
+      /* Menu hamburguer */
+      .mobile-menu-toggle {
+        display: block !important;
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #1b130d;
+        border: 1px solid red;
+        height: 100%;
+        width: 40px;
+      }
+
+      .desktop-nav {
+        display: none !important;
+      }
+
+      .mobile-nav {
+        display: none;
+        width: 100%;
+        flex-direction: column;
+        background-color: #fcfaf8;
+        padding: 15px 0;
+        border-top: 1px solid #f3ece7;
+        margin-top: 10px;
+      }
+
+      .mobile-nav.active {
+        display: flex;
+      }
+
+      .mobile-nav a {
+        padding: 12px 15px;
+        border-bottom: 1px solid #f3ece7;
+      }
+
+      /* Conteúdo principal */
+      .px-20 {
+        padding-left: 15px !important;
+        padding-right: 15px !important;
+      }
+
+      .layout-content-container {
+        max-width: 100% !important;
+      }
+
+      /* Hero section */
+      .hero-section {
+        padding: 20px 15px !important;
+        min-height: 400px !important;
+      }
+
+      .hero-section h1 {
+        font-size: 28px !important;
+        line-height: 1.2 !important;
+      }
+
+      .hero-section h2 {
+        font-size: 16px !important;
+      }
+
+      /* Seções de livros */
+      h2 {
+        font-size: 20px !important;
+        padding-left: 15px !important;
+        padding-right: 15px !important;
+      }
+
+      .book-scroll-container {
+        padding: 10px 15px !important;
+      }
+
+      /* Footer */
+      footer .flex-wrap {
+        gap: 15px !important;
+      }
+
+      footer .min-w-40 {
+        min-width: auto !important;
+        flex: 1 0 45%;
+      }
+
+      /* Ajustes gerais */
+      .flex.gap-2#user-actions {
+        margin-top: 10px;
+        width: 100%;
+        justify-content: center;
+      }
+
+      #userInitial {
+        margin-top: 10px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .hero-section {
+        min-height: 350px !important;
+      }
+
+      .hero-section h1 {
+        font-size: 24px !important;
+      }
+
+      footer .min-w-40 {
+        flex: 1 0 100%;
+      }
+
+    }
+
+    /* Estilos base para o menu hamburguer */
+    .mobile-menu-toggle {
+      display: none;
+    }
+
+    .mobile-nav {
+      display: none;
+    }
+
+    /* Melhorias para toque em dispositivos móveis */
+    button,
+    a {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Melhorias de acessibilidade para foco */
+    button:focus,
+    a:focus {
+      outline: 2px solid #ff8200;
+      outline-offset: 2px;
     }
   </style>
 </head>
@@ -42,8 +186,8 @@
         <div class="flex items-center gap-4 text-[#1b130d] logo">
           <img src="./public/assets/logos/Okukulanaua_Logo.png" alt="">
         </div>
-        <nav class="flex flex-1 justify-end gap-8" role="navigation" aria-label="Menu principal">
-         
+        <nav class="desktop-nav flex flex-1 justify-end gap-8" role="navigation" aria-label="Menu principal">
+
           <div class="flex gap-2" id="user-actions">
             <!-- Botões serão carregados dinamicamente -->
           </div>
@@ -51,6 +195,16 @@
             class="hidden h-12 bg-[#ff8200] rounded-full cursor-pointer flex items-center justify-center text-white font-bold text-lg"
             id="userInitial">
             E
+          </div>
+        </nav>
+        <!-- Botão do menu hamburguer para mobile -->
+        <button class="mobile-menu-toggle" id="mobileMenuToggle1" aria-label="Abrir menu">
+          ☰
+        </button>
+
+        <nav class="mobile-nav" role="navigation" aria-label="Menu principal">
+          <div class="block gap-2" id="user-actions">
+            <!-- Botões serão carregados dinamicamente -->
           </div>
         </nav>
       </header>
@@ -94,7 +248,7 @@
                 <p>Carregando books...</p>
               </div>
             </div>
-          </div> 
+          </div>
           <!-- Sessão 2: Novidades -->
           <h2 class="text-[#1b130d] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">
             Novidades</h2>
@@ -149,7 +303,10 @@
       </footer>
     </div>
   </div>
+  <script src="./public/assets/js/scriptMenu.js"></script>
   <script src="./public/assets/js/script.js"></script>
+
+ 
 </body>
 
 </html>

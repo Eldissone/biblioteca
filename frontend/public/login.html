@@ -5,8 +5,47 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Biblioteca</title>
     <script src="https://cdn.tailwindcss.com"></script>
-  <script src="src/js/script.js"></script>
-
+    <style>
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+        .spinner {
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #ff8200;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .alert {
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+        .alert-warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        .alert-info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .alert-success {
+            background-color: #d1f7d1;
+            border: 1px solid #bee5be;
+            color: #0c540c;
+        }
+    </style>
 </head>
 <body class="bg-[#fcfaf8] min-h-screen">
     <div class="flex items-center justify-center min-h-screen py-12 px-4 sm:px-6 lg:px-8">
@@ -19,6 +58,10 @@
                     Acesse sua conta biblioteca
                 </p>
             </div>
+            
+            <!-- Área para mensagens -->
+            <div id="message-area"></div>
+            
             <form class="mt-8 space-y-6" id="login-form">
                 <div class="rounded-md shadow-sm -space-y-px">
                     <div class="mb-4">
@@ -36,9 +79,10 @@
                 </div>
 
                 <div>
-                    <button type="submit" 
-                            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-[#ff8200] hover:bg-[#d67a3a] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#ff8200]">
-                        Entrar
+                    <button type="submit" id="submit-btn"
+                            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-[#ff8200] hover:bg-[#d67a3a] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#ff8200] disabled:opacity-50 disabled:cursor-not-allowed">
+                        <span id="btn-text">Entrar</span>
+                        <div id="btn-spinner" class="spinner" style="display: none;"></div>
                     </button>
                 </div>
 
@@ -52,41 +96,150 @@
     </div>
 
     <script>
+        // Função para mostrar mensagens
+        function showMessage(message, type = 'info') {
+            const messageArea = document.getElementById('message-area');
+            messageArea.innerHTML = `
+                <div class="alert alert-${type}">
+                    ${message}
+                </div>
+            `;
+        }
+
+        // Função para mostrar/ocultar loading
+        function setLoading(loading) {
+            const submitBtn = document.getElementById('submit-btn');
+            const btnText = document.getElementById('btn-text');
+            const btnSpinner = document.getElementById('btn-spinner');
+            const form = document.getElementById('login-form');
+
+            if (loading) {
+                submitBtn.disabled = true;
+                btnText.textContent = 'Entrando...';
+                btnSpinner.style.display = 'inline-block';
+                form.classList.add('loading');
+            } else {
+                submitBtn.disabled = false;
+                btnText.textContent = 'Entrar';
+                btnSpinner.style.display = 'none';
+                form.classList.remove('loading');
+            }
+        }
+
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const formData = new FormData(e.target);
             const data = Object.fromEntries(formData);
+            const messageArea = document.getElementById('message-area');
+            
+            // Limpar mensagens anteriores
+            messageArea.innerHTML = '';
+            setLoading(true);
             
             try {
+                console.log('Tentando login...', data.username);
+                
                 const response = await fetch('http://localhost:3000/api/login', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Accept': 'application/json'
                     },
                     body: JSON.stringify({
-                        username: data.username,
+                        username: data.username.trim(),
                         password: data.password
                     })
                 });
                 
                 const result = await response.json();
+                console.log('Resposta do servidor:', result);
                 
                 if (response.ok) {
-                    // Salvar token e dados
-                    localStorage.setItem('userToken', result.token);
-                    localStorage.setItem('userData', JSON.stringify(result.user));
+                    // Login bem-sucedido - o backend já verificou se o usuário está aprovado
+                    if (result.user.role === 'admin') {
+                        // Admin
+                        localStorage.setItem('adminToken', result.token);
+                        localStorage.setItem('userData', JSON.stringify(result.user));
+                        
+                        showMessage('Login admin realizado com sucesso! Redirecionando...', 'success');
+                        setTimeout(() => {
+                            window.location.href = 'admin/index.html';
+                        }, 1000);
+                        
+                    } else {
+                        // Usuário normal - se chegou aqui, significa que está aprovado
+                        localStorage.setItem('userToken', result.token);
+                        localStorage.setItem('userData', JSON.stringify(result.user));
+                        
+                        showMessage('Login realizado com sucesso! Redirecionando...', 'success');
+                        setTimeout(() => {
+                            window.location.href = 'index.html';
+                        }, 1000);
+                    }
                     
-                    alert('Login realizado com sucesso!');
-                    window.location.href = 'index.html';
                 } else {
-                    alert(result.error || 'Usuário ou senha inválidos');
+                    // Erro no login - mostrar mensagem do servidor
+                    console.error('Erro no login:', result.error);
+                    
+                    if (result.error && result.error.includes('pendente') || result.error.includes('aprovado')) {
+                        showMessage(result.error, 'warning');
+                    } else {
+                        showMessage(result.error || 'Usuário ou senha inválidos', 'warning');
+                    }
                 }
+                
             } catch (error) {
-                console.error('Erro:', error);
-                alert('Erro ao conectar com o servidor');
+                console.error('Erro de conexão:', error);
+                showMessage('Erro ao conectar com o servidor. Verifique sua conexão.', 'warning');
+            } finally {
+                setLoading(false);
             }
         });
+
+        // Verificar se já está logado
+        document.addEventListener('DOMContentLoaded', function() {
+            const userToken = localStorage.getItem('userToken');
+            const adminToken = localStorage.getItem('adminToken');
+            
+            if (userToken || adminToken) {
+                const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+                
+                if (userData.role === 'admin') {
+                    showMessage('Você já está logado como administrador. Redirecionando...', 'info');
+                    setTimeout(() => {
+                        window.location.href = 'admin/index.html';
+                    }, 2000);
+                } else {
+                    showMessage('Você já está logado. Redirecionando...', 'info');
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 2000);
+                }
+            }
+        });
+
+        // Adicionar validação em tempo real
+        document.getElementById('username').addEventListener('input', function() {
+            this.value = this.value.trim();
+        });
+
+        // Prevenir envio duplo
+        let isSubmitting = false;
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            if (isSubmitting) {
+                e.preventDefault();
+                return;
+            }
+            isSubmitting = true;
+            setTimeout(() => { isSubmitting = false; }, 3000);
+        });
+
+        // Debug: Verificar se há tokens no localStorage
+        console.log('Tokens no localStorage:');
+        console.log('userToken:', localStorage.getItem('userToken'));
+        console.log('adminToken:', localStorage.getItem('adminToken'));
+        console.log('userData:', localStorage.getItem('userData'));
     </script>
 </body>
 </html>

@@ -1,4 +1,3 @@
-// Configurações globais
 const API_BASE_URL = (typeof window !== 'undefined' && window.location && window.location.origin) ? `${window.location.origin}/api` : 'http://localhost:3000/api';
 let userToken = localStorage.getItem('userToken');
 let userData = JSON.parse(localStorage.getItem('userData') || 'null');
@@ -9,17 +8,14 @@ logo.addEventListener('click', () => {
   window.location.href = "index.html";  
 })
 
-// Função para verificar se usuário está logado
 function isUserLoggedIn() {
   return userToken && userData;
 }
 
-// Função para carregar botões de usuário
 function loadUserActions() {
   const container = document.getElementById('user-actions');
 
   if (isUserLoggedIn()) {
-    // Verificar se o usuário é admin
     const isAdmin = userData && userData.role === 'admin';
     let adminButton = '';
     if (isAdmin) {
@@ -31,7 +27,6 @@ function loadUserActions() {
             </button>
           `;
     }
-    // Avatar do usuário
     let avatarHtml = '';
     if (userData.avatar) {
       avatarHtml = `<div onclick="showProfileModal()" title="Meu perfil" class="w-10 h-10 rounded-full bg-center bg-cover border-2 border-[#ff8200] cursor-pointer hover:scale-105 transition-transform" style="background-image: url('${userData.avatar}');"></div>`;
@@ -65,7 +60,6 @@ function loadUserActions() {
   }
 }
 
-// Função para fazer logout
 function logout() {
   localStorage.removeItem('userToken');
   localStorage.removeItem('userData');
@@ -77,14 +71,12 @@ function logout() {
 }
 
 
-// Carregar dados quando a página carregar
 document.addEventListener('DOMContentLoaded', () => {
   loadUserActions();
   if (isUserLoggedIn()) {
   }
 });
 
-// Função para abrir configurações (placeholder)
 function openSettings() {
   alert('Configurações do perfil em breve!');
 }
@@ -94,7 +86,7 @@ function createBookCard(book) {
   const pdfUrl = `http://localhost:3000${book.pdf_file}`; // CORRIGIDO
 
   return `
-      <div class="flex flex-col items-center bg-white rounded-lg shadow p-3 min-w-[250px] max-w-[250px]">
+      <div class="boock flex flex-col items-center bg-white rounded-lg shadow p-3 min-w-[250px] max-w-[250px]">
         <img src="${imageUrl}" alt="${book.title}" 
              class="w-36 h-44 object-cover rounded-md mb-2">
         <h3 class="text-[#1b130d] max-w-[250px] p-5  text-sm font-bold truncate">${book.title}</h3>
@@ -111,8 +103,6 @@ function createBookCard(book) {
       </div>
     `;
 }
-
-
 
 // Carregar livros do backend
 async function loadBooks() {

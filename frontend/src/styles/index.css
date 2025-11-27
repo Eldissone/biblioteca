@@ -1,6 +1,6 @@
 @tailwind base;
 @tailwind components;
-@tailwind utilities; 
+@tailwind utilities;
 
 .product {
     height: 180px;
@@ -8,6 +8,7 @@
     flex-direction: column;
     justify-content: space-between;
 }
+
 .product2 {
     height: 140px;
     display: flex;
@@ -18,4 +19,124 @@
 img {
     display: block;
     object-fit: contain;
+}
+
+/* Estilos para responsividade móvel */
+@media (max-width: 768px) {
+
+    /* Header responsivo */
+    header {
+        padding: 10px 15px !important;
+        flex-wrap: wrap;
+    }
+
+    .logo img {
+        max-height: 40px;
+    }
+
+    /* Menu hamburguer */
+    .mobile-menu-toggle {
+        display: block !important;
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #1b130d;
+    }
+
+    .desktop-nav {
+        display: none !important;
+    }
+
+    .mobile-nav {
+        display: none;
+        width: 100%;
+        flex-direction: column;
+        background-color: #fcfaf8;
+        padding: 15px 0;
+        border-top: 1px solid #f3ece7;
+        margin-top: 10px;
+    }
+
+    .mobile-nav.active {
+        display: flex;
+    }
+
+    .mobile-nav a {
+        padding: 12px 15px;
+        border-bottom: 1px solid #f3ece7;
+    }
+
+    /* Conteúdo principal */
+    .px-20 {
+        padding-left: 15px !important;
+        padding-right: 15px !important;
+    }
+
+    .layout-content-container {
+        max-width: 100% !important;
+    }
+
+    /* Hero section */
+    .hero-section {
+        padding: 20px 15px !important;
+        min-height: 400px !important;
+    }
+
+    .hero-section h1 {
+        font-size: 28px !important;
+        line-height: 1.2 !important;
+    }
+
+    .hero-section h2 {
+        font-size: 16px !important;
+    }
+
+    /* Seções de livros */
+    h2 {
+        font-size: 20px !important;
+        padding-left: 15px !important;
+        padding-right: 15px !important;
+    }
+
+    .book-scroll-container {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
+        gap: 16px !important;
+        padding: 16px !important;
+        overflow: visible !important;
+    }
+
+    .boock,
+    .book-card {
+        min-width: 100% !important;
+        border: 1px solid red;
+    }
+
+
+
+    .book-scroll-container {
+        padding: 10px 15px !important;
+    }
+
+    /* Footer */
+    footer .flex-wrap {
+        gap: 15px !important;
+    }
+
+    footer .min-w-40 {
+        min-width: auto !important;
+        flex: 1 0 45%;
+    }
+
+    /* Ajustes gerais */
+    .flex.gap-2#user-actions {
+        margin-top: 10px;
+        width: 100%;
+        justify-content: center;
+    }
+
+    #userInitial {
+        margin-top: 10px;
+    }
 }

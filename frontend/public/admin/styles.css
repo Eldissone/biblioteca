@@ -602,6 +602,53 @@ input[type="file"].form-input::-webkit-file-upload-button:hover {
     color: #9a6c4c;
 }
 
+.access-management {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.access-section {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.access-section h3 {
+    margin-bottom: 1rem;
+    color: #333;
+    border-bottom: 2px solid #ff8200;
+    padding-bottom: 0.5rem;
+}
+
+.btn-approve {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 5px;
+}
+
+.btn-reject, .btn-suspend {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-approve:hover {
+    background: #218838;
+}
+
+.btn-reject:hover, .btn-suspend:hover {
+    background: #c82332;
+}
+
 /* Settings */
 .settings-form {
     background-color: white;

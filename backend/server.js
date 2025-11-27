@@ -54,7 +54,7 @@ const authenticateToken = (req, res, next) => {
 // ====================
 // AUTENTICAÇÃO JWT APENAS PARA ADMIN
 // ====================
-const authenticateAdmin = (req, res, next) => {
+const authenticateAdmin = async (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 
@@ -62,18 +62,58 @@ const authenticateAdmin = (req, res, next) => {
         return res.status(401).json({ error: 'Token de acesso necessário' });
     }
 
-    jwt.verify(token, JWT_SECRET, (err, user) => {
-        if (err) {
-            return res.status(403).json({ error: 'Token inválido ou expirado' });
-        }
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
         
-        if (user.role !== 'admin') {
+        // Verificar se o usuário é admin no banco de dados
+        const adminCheck = await pool.query(
+            "SELECT * FROM readers WHERE id = $1 AND role = 'admin' AND is_active = true",
+            [decoded.id]
+        );
+
+        if (adminCheck.rows.length === 0) {
             return res.status(403).json({ error: 'Acesso negado. Apenas administradores.' });
         }
         
-        req.user = user;
+        req.user = adminCheck.rows[0];
+        req.admin = adminCheck.rows[0];
         next();
-    });
+    } catch (err) {
+        return res.status(403).json({ error: 'Token inválido ou expirado' });
+    }
+};
+
+// ====================
+// AUTENTICAÇÃO PARA UTILIZADORES NORMAIS (APROVADOS)
+// ====================
+const authenticateUser = async (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+        return res.status(401).json({ error: 'Token de acesso necessário' });
+    }
+
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        
+        // Verificar se o utilizador existe e está aprovado
+        const userCheck = await pool.query(
+            "SELECT * FROM readers WHERE id = $1 AND role = 'reader' AND is_approved = TRUE AND is_active = TRUE",
+            [decoded.id]
+        );
+
+        if (userCheck.rows.length === 0) {
+            return res.status(401).json({ 
+                error: 'Acesso não autorizado. Aguarde aprovação do administrador.' 
+            });
+        }
+
+        req.user = userCheck.rows[0];
+        next();
+    } catch (err) {
+        return res.status(403).json({ error: 'Token inválido ou expirado' });
+    }
 };
 
 // ====================
@@ -90,9 +130,9 @@ async function initializeDefaultAdmin() {
             // Criar admin padrão
             const hashedPassword = await bcrypt.hash('admin123', 10);
             await pool.query(
-                `INSERT INTO readers (username, email, password, full_name, role, is_active) 
-                 VALUES ($1, $2, $3, $4, $5, $6)`,
-                ['admin', 'admin@biblioteca.com', hashedPassword, 'Administrador', 'admin', true]
+                `INSERT INTO readers (username, email, password, full_name, role, is_active, is_approved) 
+                 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+                ['admin', 'admin@biblioteca.com', hashedPassword, 'Administrador', 'admin', true, true]
             );
             console.log('✅ Admin padrão criado: admin / admin123');
         } else {
@@ -127,6 +167,13 @@ app.post('/api/login', async (req, res) => {
             return res.status(401).json({ error: 'Credenciais inválidas' });
         }
 
+        // Para utilizadores normais, verificar se estão aprovados
+        if (user.role === 'reader' && !user.is_approved) {
+            return res.status(401).json({ 
+                error: 'Acesso pendente de aprovação. Aguarde a autorização do administrador.' 
+            });
+        }
+
         const token = jwt.sign(
             { 
                 id: user.id, 
@@ -151,6 +198,112 @@ app.post('/api/login', async (req, res) => {
         });
     } catch (error) {
         console.error('Erro no login:', error);
+        res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+});
+
+// ====================
+// GESTÃO DE ACESSO - ROTAS ADMIN
+// ====================
+
+// Rota para obter utilizadores pendentes
+app.get('/api/admin/pending-readers', authenticateAdmin, async (req, res) => {
+    try {
+        const readers = await pool.query(`
+            SELECT id, username, email, full_name, phone, address, created_at, is_approved 
+            FROM readers 
+            WHERE is_approved = FALSE AND role = 'reader'
+            ORDER BY created_at DESC
+        `);
+        res.json(readers.rows);
+    } catch (error) {
+        console.error('Erro ao buscar leitores pendentes:', error);
+        res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+});
+
+// Rota para obter utilizadores aprovados
+app.get('/api/admin/approved-readers', authenticateAdmin, async (req, res) => {
+    try {
+        const readers = await pool.query(`
+            SELECT id, username, email, full_name, phone, address, created_at, is_approved, approved_at
+            FROM readers 
+            WHERE is_approved = TRUE AND role = 'reader'
+            ORDER BY approved_at DESC
+        `);
+        res.json(readers.rows);
+    } catch (error) {
+        console.error('Erro ao buscar leitores aprovados:', error);
+        res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+});
+
+// Rota para aprovar utilizador
+app.put('/api/admin/readers/:id/approve', authenticateAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // Verificar se o utilizador existe e é um leitor
+        const userCheck = await pool.query(
+            'SELECT * FROM readers WHERE id = $1 AND role = $2',
+            [id, 'reader']
+        );
+
+        if (userCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'Utilizador não encontrado' });
+        }
+
+        await pool.query(`
+            UPDATE readers 
+            SET is_approved = TRUE, approved_at = NOW(), approved_by = $1 
+            WHERE id = $2 AND role = 'reader'
+        `, [req.admin.id, id]);
+        
+        res.json({ success: true, message: 'Utilizador aprovado com sucesso' });
+    } catch (error) {
+        console.error('Erro ao aprovar utilizador:', error);
+        res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+});
+
+// Rota para rejeitar utilizador
+app.put('/api/admin/readers/:id/reject', authenticateAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const result = await pool.query(
+            'DELETE FROM readers WHERE id = $1 AND is_approved = FALSE AND role = $2 RETURNING *',
+            [id, 'reader']
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Utilizador não encontrado ou já aprovado' });
+        }
+
+        res.json({ success: true, message: 'Utilizador rejeitado com sucesso' });
+    } catch (error) {
+        console.error('Erro ao rejeitar utilizador:', error);
+        res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+});
+
+// Rota para suspender utilizador
+app.put('/api/admin/readers/:id/suspend', authenticateAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const result = await pool.query(
+            'UPDATE readers SET is_approved = FALSE WHERE id = $1 AND role = $2 RETURNING *',
+            [id, 'reader']
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Utilizador não encontrado' });
+        }
+
+        res.json({ success: true, message: 'Acesso do utilizador suspenso com sucesso' });
+    } catch (error) {
+        console.error('Erro ao suspender utilizador:', error);
         res.status(500).json({ error: 'Erro interno do servidor' });
     }
 });
@@ -244,16 +397,16 @@ app.post('/api/register', async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
         const newUser = await pool.query(
-            `INSERT INTO readers (username, email, password, full_name, phone, address, role) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7) 
-             RETURNING id, username, email, full_name, role, created_at`,
-            [username, email, hashedPassword, full_name, phone || null, address || null, "reader"]
+            `INSERT INTO readers (username, email, password, full_name, phone, address, role, is_approved) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+             RETURNING id, username, email, full_name, role, created_at, is_approved`,
+            [username, email, hashedPassword, full_name, phone || null, address || null, "reader", false]
         );
 
         res.status(201).json({
             success: true,
             user: newUser.rows[0],
-            message: "Conta criada com sucesso!"
+            message: "Conta criada com sucesso! Aguarde a aprovação do administrador."
         });
 
     } catch (error) {
@@ -268,7 +421,9 @@ app.post('/api/register', async (req, res) => {
 app.get('/api/readers', authenticateAdmin, async (req, res) => {
     try {
         const result = await pool.query(
-            "SELECT id, username, email, full_name, phone, address, created_at, is_active, role FROM readers WHERE role = 'reader' ORDER BY created_at DESC"
+            `SELECT id, username, email, full_name, phone, address, created_at, is_active, role, is_approved 
+             FROM readers WHERE role = 'reader' 
+             ORDER BY created_at DESC`
         );
         
         res.json(result.rows);
@@ -454,6 +609,9 @@ app.get('/api/admin/stats', authenticateAdmin, async (req, res) => {
         const borrowedRes = await pool.query("SELECT COUNT(*) FROM loans WHERE status <> 'returned'");
         const reservationsRes = await pool.query("SELECT COUNT(*) FROM reservations WHERE status = 'active'");
 
+        // Leitores pendentes de aprovação
+        const pendingReadersRes = await pool.query("SELECT COUNT(*) FROM readers WHERE role = 'reader' AND is_approved = false");
+
         // Top borrowed books
         const topBooksRes = await pool.query(
             `SELECT b.id, b.title, b.author, COUNT(l.id) AS times_borrowed
@@ -491,6 +649,7 @@ app.get('/api/admin/stats', authenticateAdmin, async (req, res) => {
             overdue_loans: parseInt(overdueRes.rows[0].count, 10) || 0,
             borrowed_books: parseInt(borrowedRes.rows[0].count, 10) || 0,
             reservations_count: parseInt(reservationsRes.rows[0].count, 10) || 0,
+            pending_readers: parseInt(pendingReadersRes.rows[0].count, 10) || 0,
             top_borrowed_books: topBooksRes.rows.map(r => ({ 
                 id: r.id, 
                 title: r.title, 
@@ -513,552 +672,6 @@ app.get('/api/admin/stats', authenticateAdmin, async (req, res) => {
 });
 
 // ====================
-// ROTAS DA COMUNIDADE - VERSÃO CORRIGIDA
-// ====================
-
-// GET - Listar discussões com filtros e paginação
-app.get('/api/community/discussions', async (req, res) => {
-    try {
-        const { 
-            page = 1, 
-            limit = 10, 
-            category = 'all', 
-            tab = 'recent',
-            search = '' 
-        } = req.query;
-
-        console.log('📖 Buscando discussões:', { page, limit, category, tab, search });
-
-        const offset = (page - 1) * limit;
-        let whereConditions = ['1=1'];
-        let queryParams = [limit, offset];
-        let paramCount = 2;
-
-        // Filtro por categoria
-        if (category && category !== 'all' && category !== 'undefined') {
-            paramCount++;
-            whereConditions.push(`cd.category = $${paramCount}`);
-            queryParams.push(category);
-        }
-
-        // Filtro por busca
-        if (search && search !== 'undefined') {
-            paramCount++;
-            whereConditions.push(`(LOWER(cd.title) LIKE LOWER($${paramCount}) OR LOWER(cd.content) LIKE LOWER($${paramCount}))`);
-            queryParams.push(`%${search}%`);
-        }
-
-        // Ordenação por aba
-        let orderBy = 'cd.created_at DESC';
-        switch (tab) {
-            case 'popular':
-                orderBy = 'cd.likes DESC, cd.created_at DESC';
-                break;
-            case 'unanswered':
-                whereConditions.push('cd.is_answered = false');
-                orderBy = 'cd.created_at DESC';
-                break;
-            case 'recent':
-            default:
-                orderBy = 'cd.created_at DESC';
-                break;
-        }
-
-        const whereClause = whereConditions.join(' AND ');
-
-        // Verificar se há usuário logado para likes
-        const authHeader = req.headers['authorization'];
-        let userId = null;
-        if (authHeader && authHeader.startsWith('Bearer ')) {
-            const token = authHeader.split(' ')[1];
-            try {
-                const decoded = jwt.verify(token, JWT_SECRET);
-                userId = decoded.id;
-            } catch (error) {
-                console.log('Token inválido, continuando sem usuário');
-            }
-        }
-
-        // Query principal - SIMPLIFICADA
-        const discussionsQuery = `
-            SELECT 
-                cd.*,
-                r.username as author_username,
-                r.full_name as author_name,
-                r.is_online as author_online,
-                (SELECT COUNT(*) FROM community_likes cl WHERE cl.discussion_id = cd.id) as like_count,
-                (SELECT COUNT(*) FROM community_comments cc WHERE cc.discussion_id = cd.id) as comment_count,
-                EXISTS(
-                    SELECT 1 FROM community_likes cl 
-                    WHERE cl.discussion_id = cd.id AND cl.user_id = $${paramCount + 1}
-                ) as user_liked
-            FROM community_discussions cd
-            LEFT JOIN readers r ON cd.author_id = r.id
-            WHERE ${whereClause}
-            ORDER BY ${orderBy}
-            LIMIT $1 OFFSET $2
-        `;
-
-        queryParams.push(userId);
-
-        // Query para total
-        const countQuery = `
-            SELECT COUNT(*) as total
-            FROM community_discussions cd
-            WHERE ${whereClause}
-        `;
-
-        console.log('Executando query de discussões...');
-        
-        const [discussionsResult, countResult] = await Promise.all([
-            pool.query(discussionsQuery, queryParams),
-            pool.query(countQuery, queryParams.slice(2, -1)) // Remove limit, offset e userId
-        ]);
-
-        const discussions = discussionsResult.rows.map(discussion => ({
-            id: discussion.id,
-            title: discussion.title,
-            content: discussion.content,
-            author_id: discussion.author_id,
-            category: discussion.category,
-            likes: discussion.like_count || 0,
-            comments_count: discussion.comment_count || 0,
-            views: discussion.views || 0,
-            is_answered: discussion.is_answered,
-            created_at: discussion.created_at,
-            updated_at: discussion.updated_at,
-            author_username: discussion.author_username,
-            author_name: discussion.author_name,
-            author_online: discussion.author_online,
-            user_liked: discussion.user_liked || false
-        }));
-
-        const total = parseInt(countResult.rows[0]?.total || 0);
-        const totalPages = Math.ceil(total / limit);
-
-        console.log(`✅ Encontradas ${discussions.length} discussões (total: ${total})`);
-
-        res.json({
-            discussions,
-            total,
-            page: parseInt(page),
-            totalPages
-        });
-
-    } catch (error) {
-        console.error('❌ Erro ao buscar discussões:', error);
-        res.status(500).json({ 
-            success: false,
-            error: 'Erro interno ao buscar discussões',
-            message: error.message
-        });
-    }
-});
-
-// GET - Buscar uma discussão específica
-app.get('/api/community/discussions/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        console.log(`📖 Buscando discussão ${id}`);
-
-        // Incrementar visualizações
-        await pool.query(
-            'UPDATE community_discussions SET views = COALESCE(views, 0) + 1 WHERE id = $1',
-            [id]
-        );
-
-        // Verificar se há usuário logado
-        const authHeader = req.headers['authorization'];
-        let userId = null;
-        if (authHeader && authHeader.startsWith('Bearer ')) {
-            const token = authHeader.split(' ')[1];
-            try {
-                const decoded = jwt.verify(token, JWT_SECRET);
-                userId = decoded.id;
-            } catch (error) {
-                // Token inválido
-            }
-        }
-
-        const discussionQuery = `
-            SELECT 
-                cd.*,
-                r.username as author_username,
-                r.full_name as author_name,
-                r.is_online as author_online,
-                (SELECT COUNT(*) FROM community_likes cl WHERE cl.discussion_id = cd.id) as like_count,
-                (SELECT COUNT(*) FROM community_comments cc WHERE cc.discussion_id = cd.id) as comment_count,
-                EXISTS(
-                    SELECT 1 FROM community_likes cl 
-                    WHERE cl.discussion_id = cd.id AND cl.user_id = $2
-                ) as user_liked
-            FROM community_discussions cd
-            LEFT JOIN readers r ON cd.author_id = r.id
-            WHERE cd.id = $1
-        `;
-
-        const discussionResult = await pool.query(discussionQuery, [id, userId]);
-
-        if (discussionResult.rows.length === 0) {
-            return res.status(404).json({ 
-                success: false,
-                error: 'Discussão não encontrada' 
-            });
-        }
-
-        const discussion = {
-            id: discussionResult.rows[0].id,
-            title: discussionResult.rows[0].title,
-            content: discussionResult.rows[0].content,
-            author_id: discussionResult.rows[0].author_id,
-            category: discussionResult.rows[0].category,
-            likes: discussionResult.rows[0].like_count || 0,
-            comments_count: discussionResult.rows[0].comment_count || 0,
-            views: discussionResult.rows[0].views || 0,
-            is_answered: discussionResult.rows[0].is_answered,
-            created_at: discussionResult.rows[0].created_at,
-            updated_at: discussionResult.rows[0].updated_at,
-            author_username: discussionResult.rows[0].author_username,
-            author_name: discussionResult.rows[0].author_name,
-            author_online: discussionResult.rows[0].author_online,
-            user_liked: discussionResult.rows[0].user_liked || false
-        };
-
-        // Buscar comentários
-        const commentsQuery = `
-            SELECT 
-                cc.*,
-                r.username as author_username,
-                r.full_name as author_name,
-                r.is_online as author_online
-            FROM community_comments cc
-            LEFT JOIN readers r ON cc.author_id = r.id
-            WHERE cc.discussion_id = $1
-            ORDER BY cc.created_at ASC
-        `;
-
-        const commentsResult = await pool.query(commentsQuery, [id]);
-
-        console.log(`✅ Discussão ${id} carregada com ${commentsResult.rows.length} comentários`);
-
-        res.json({
-            success: true,
-            discussion,
-            comments: commentsResult.rows
-        });
-
-    } catch (error) {
-        console.error('❌ Erro ao buscar discussão:', error);
-        res.status(500).json({ 
-            success: false,
-            error: 'Erro interno ao buscar discussão',
-            message: error.message
-        });
-    }
-});
-
-// POST - Criar nova discussão
-app.post('/api/community/discussions', authenticateToken, async (req, res) => {
-    try {
-        const { title, content, category } = req.body;
-        const authorId = req.user.id;
-
-        console.log('📝 Criando discussão:', { title, category, authorId });
-
-        // Validações
-        if (!title || !content) {
-            return res.status(400).json({ 
-                success: false,
-                error: 'Título e conteúdo são obrigatórios' 
-            });
-        }
-
-        if (title.length < 10 || title.length > 100) {
-            return res.status(400).json({ 
-                success: false,
-                error: 'O título deve ter entre 10 e 100 caracteres' 
-            });
-        }
-
-        if (content.length < 20 || content.length > 1000) {
-            return res.status(400).json({ 
-                success: false,
-                error: 'O conteúdo deve ter entre 20 e 1000 caracteres' 
-            });
-        }
-
-        const result = await pool.query(
-            `INSERT INTO community_discussions 
-             (title, content, author_id, category) 
-             VALUES ($1, $2, $3, $4) 
-             RETURNING *`,
-            [title, content, authorId, category || 'geral']
-        );
-
-        // Buscar dados completos da discussão
-        const fullDiscussionQuery = `
-            SELECT 
-                cd.*,
-                r.username as author_username,
-                r.full_name as author_name,
-                r.is_online as author_online
-            FROM community_discussions cd
-            LEFT JOIN readers r ON cd.author_id = r.id
-            WHERE cd.id = $1
-        `;
-
-        const fullResult = await pool.query(fullDiscussionQuery, [result.rows[0].id]);
-
-        console.log(`✅ Discussão criada com ID: ${result.rows[0].id}`);
-
-        res.status(201).json({
-            success: true,
-            discussion: fullResult.rows[0],
-            message: 'Discussão criada com sucesso!'
-        });
-
-    } catch (error) {
-        console.error('❌ Erro ao criar discussão:', error);
-        res.status(500).json({ 
-            success: false,
-            error: 'Erro interno ao criar discussão',
-            message: error.message
-        });
-    }
-});
-
-// POST - Adicionar comentário
-app.post('/api/community/discussions/:id/comments', authenticateToken, async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { content } = req.body;
-        const authorId = req.user.id;
-
-        console.log(`💬 Adicionando comentário à discussão ${id}`);
-
-        if (!content) {
-            return res.status(400).json({ 
-                success: false,
-                error: 'Conteúdo do comentário é obrigatório' 
-            });
-        }
-
-        if (content.length > 500) {
-            return res.status(400).json({ 
-                success: false,
-                error: 'O comentário deve ter no máximo 500 caracteres' 
-            });
-        }
-
-        // Verificar se a discussão existe
-        const discussionCheck = await pool.query(
-            'SELECT id FROM community_discussions WHERE id = $1',
-            [id]
-        );
-
-        if (discussionCheck.rows.length === 0) {
-            return res.status(404).json({ 
-                success: false,
-                error: 'Discussão não encontrada' 
-            });
-        }
-
-        // Inserir comentário
-        const commentResult = await pool.query(
-            `INSERT INTO community_comments 
-             (discussion_id, author_id, content) 
-             VALUES ($1, $2, $3) 
-             RETURNING *`,
-            [id, authorId, content]
-        );
-
-        // Atualizar contador de comentários
-        await pool.query(
-            `UPDATE community_discussions 
-             SET comments_count = comments_count + 1, 
-                 is_answered = true,
-                 updated_at = CURRENT_TIMESTAMP 
-             WHERE id = $1`,
-            [id]
-        );
-
-        // Buscar dados completos do comentário
-        const fullCommentQuery = `
-            SELECT 
-                cc.*,
-                r.username as author_username,
-                r.full_name as author_name,
-                r.is_online as author_online
-            FROM community_comments cc
-            LEFT JOIN readers r ON cc.author_id = r.id
-            WHERE cc.id = $1
-        `;
-
-        const fullResult = await pool.query(fullCommentQuery, [commentResult.rows[0].id]);
-
-        console.log(`✅ Comentário adicionado com ID: ${commentResult.rows[0].id}`);
-
-        res.status(201).json({
-            success: true,
-            comment: fullResult.rows[0],
-            message: 'Comentário adicionado com sucesso!'
-        });
-
-    } catch (error) {
-        console.error('❌ Erro ao adicionar comentário:', error);
-        res.status(500).json({ 
-            success: false,
-            error: 'Erro interno ao adicionar comentário',
-            message: error.message
-        });
-    }
-});
-
-// POST - Curtir/Descurtir discussão
-app.post('/api/community/discussions/:id/like', authenticateToken, async (req, res) => {
-    try {
-        const { id } = req.params;
-        const userId = req.user.id;
-
-        console.log(`❤️  Toggle like para discussão ${id} pelo usuário ${userId}`);
-
-        // Verificar se a discussão existe
-        const discussionCheck = await pool.query(
-            'SELECT id FROM community_discussions WHERE id = $1',
-            [id]
-        );
-
-        if (discussionCheck.rows.length === 0) {
-            return res.status(404).json({ 
-                success: false,
-                error: 'Discussão não encontrada' 
-            });
-        }
-
-        // Verificar se já curtiu
-        const existingLike = await pool.query(
-            'SELECT id FROM community_likes WHERE discussion_id = $1 AND user_id = $2',
-            [id, userId]
-        );
-
-        let liked = false;
-        let message = '';
-
-        if (existingLike.rows.length > 0) {
-            // Remover like
-            await pool.query(
-                'DELETE FROM community_likes WHERE discussion_id = $1 AND user_id = $2',
-                [id, userId]
-            );
-            await pool.query(
-                'UPDATE community_discussions SET likes = GREATEST(likes - 1, 0) WHERE id = $1',
-                [id]
-            );
-            liked = false;
-            message = 'Like removido';
-        } else {
-            // Adicionar like
-            await pool.query(
-                'INSERT INTO community_likes (discussion_id, user_id) VALUES ($1, $2)',
-                [id, userId]
-            );
-            await pool.query(
-                'UPDATE community_discussions SET likes = likes + 1 WHERE id = $1',
-                [id]
-            );
-            liked = true;
-            message = 'Discussão curtida!';
-        }
-
-        console.log(`✅ Like atualizado: ${message}`);
-
-        res.json({
-            success: true,
-            liked,
-            message
-        });
-
-    } catch (error) {
-        console.error('❌ Erro ao curtir discussão:', error);
-        res.status(500).json({ 
-            success: false,
-            error: 'Erro interno ao curtir discussão',
-            message: error.message
-        });
-    }
-});
-
-// GET - Estatísticas da comunidade
-app.get('/api/community/stats', async (req, res) => {
-    try {
-        console.log('📊 Buscando estatísticas da comunidade');
-
-        const totalDiscussions = await pool.query('SELECT COUNT(*) FROM community_discussions');
-        const totalComments = await pool.query('SELECT COUNT(*) FROM community_comments');
-        const totalMembers = await pool.query("SELECT COUNT(*) FROM readers WHERE role = 'reader'");
-        const onlineMembers = await pool.query("SELECT COUNT(*) FROM readers WHERE is_online = true AND role = 'reader'");
-
-        // Membros ativos
-        const activeMembers = await pool.query(`
-            SELECT id, username, full_name, is_online
-            FROM readers 
-            WHERE role = 'reader' 
-            ORDER BY is_online DESC, created_at DESC
-            LIMIT 10
-        `);
-
-        const stats = {
-            totalDiscussions: parseInt(totalDiscussions.rows[0].count),
-            totalComments: parseInt(totalComments.rows[0].count),
-            totalMembers: parseInt(totalMembers.rows[0].count),
-            onlineMembers: parseInt(onlineMembers.rows[0].count),
-            activeMembers: activeMembers.rows
-        };
-
-        console.log('✅ Estatísticas carregadas:', stats);
-
-        res.json(stats);
-
-    } catch (error) {
-        console.error('❌ Erro ao buscar estatísticas:', error);
-        res.status(500).json({ 
-            success: false,
-            error: 'Erro interno ao buscar estatísticas',
-            message: error.message
-        });
-    }
-});
-
-// PUT - Atualizar status online dos usuários
-app.put('/api/community/users/online', authenticateToken, async (req, res) => {
-    try {
-        const { isOnline } = req.body;
-        const userId = req.user.id;
-
-        console.log(`🟢 Atualizando status online para usuário ${userId}: ${isOnline}`);
-
-        await pool.query(
-            'UPDATE readers SET is_online = $1 WHERE id = $2',
-            [isOnline, userId]
-        );
-
-        res.json({ 
-            success: true, 
-            message: 'Status atualizado',
-            isOnline 
-        });
-
-    } catch (error) {
-        console.error('❌ Erro ao atualizar status:', error);
-        res.status(500).json({ 
-            success: false,
-            error: 'Erro interno ao atualizar status',
-            message: error.message
-        });
-    }
-});
-
-// ====================
 // ROTA DE VERIFICAÇÃO DE TOKEN
 // ====================
 app.get('/api/admin/verify', authenticateAdmin, (req, res) => {
@@ -1068,7 +681,8 @@ app.get('/api/admin/verify', authenticateAdmin, (req, res) => {
             id: req.user.id,
             username: req.user.username, 
             role: req.user.role,
-            email: req.user.email
+            email: req.user.email,
+            full_name: req.user.full_name
         } 
     });
 });

@@ -4,7 +4,7 @@ const API_BASE_URL = window.location.origin + '/api';
 // Verificar autenticação
 function checkAuth() {
     const token = localStorage.getItem('adminToken');
-    
+
     if (!token) {
         console.log('Nenhum token encontrado, redirecionando para login...');
         redirectToLogin();
@@ -15,14 +15,14 @@ function checkAuth() {
     try {
         const payload = JSON.parse(atob(token.split('.')[1]));
         const isExpired = payload.exp * 1000 < Date.now();
-        
+
         if (isExpired) {
             console.log('Token expirado');
             localStorage.removeItem('adminToken');
             redirectToLogin();
             return null;
         }
-        
+
         return token;
     } catch (error) {
         console.error('Token inválido:', error);
@@ -57,18 +57,18 @@ async function apiRequest(endpoint, options = {}) {
 
     try {
         const response = await fetch(url, config);
-        
+
         if (response.status === 401 || response.status === 403) {
             console.log('Acesso não autorizado, redirecionando...');
             localStorage.removeItem('adminToken');
             redirectToLogin();
             return null;
         }
-        
+
         if (!response.ok) {
             throw new Error(`Erro HTTP ${response.status}: ${response.statusText}`);
         }
-        
+
         return await response.json();
     } catch (err) {
         console.error("Erro API:", err);
@@ -78,7 +78,7 @@ async function apiRequest(endpoint, options = {}) {
 }
 
 // ================== MÓDULO PRINCIPAL ==================
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Verificar autenticação ao carregar a página
     if (!checkAuth()) {
         return;
@@ -94,9 +94,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Logout
     if (logoutBtn) {
-        logoutBtn.addEventListener('click', function() {
+        logoutBtn.addEventListener('click', function () {
             if (confirm('Deseja realmente sair?')) {
                 localStorage.removeItem('adminToken');
+                localStorage.removeItem('adminUser');
                 window.location.href = 'login.html';
             }
         });
@@ -137,6 +138,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     break;
                 case 'dashboard-page':
                     await loadAdminStats();
+                    break;
+                case 'access-page': // Nova página de gestão de acesso
+                    await loadPendingReaders();
+                    await loadApprovedReaders();
                     break;
             }
         } catch (error) {
@@ -183,13 +188,13 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             const submitBtn = addBookForm.querySelector('button[type="submit"]');
             const originalText = submitBtn.textContent;
-            
+
             try {
                 submitBtn.textContent = 'Adicionando...';
                 submitBtn.disabled = true;
 
                 const formData = new FormData(addBookForm);
-                
+
                 const response = await fetch(`${API_BASE_URL}/books`, {
                     method: 'POST',
                     headers: {
@@ -204,7 +209,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
 
                 const result = await response.json();
-                
+
                 if (result.success) {
                     alert("Livro adicionado com sucesso!");
                     addBookModal.classList.remove('active');
@@ -223,35 +228,34 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
- // Carregar lista de livros
-async function loadBooks() {
-    if (!booksTbody) return;
-    try {
-        const books = await apiRequest('/books');
+    // Carregar lista de livros
+    async function loadBooks() {
+        if (!booksTbody) return;
+        try {
+            const books = await apiRequest('/books');
 
-        if (!books || books.length === 0) {
-            booksTbody.innerHTML = `
+            if (!books || books.length === 0) {
+                booksTbody.innerHTML = `
                 <tr>
                     <td colspan="8" style="text-align:center; padding:20px;">
                         Nenhum livro encontrado
                     </td>
                 </tr>`;
-            return;
-        }
+                return;
+            }
 
-        // Usar a origem da API (localhost:3000) em vez da origem atual
-        const API_ORIGIN = 'http://localhost:3000';
+            // Usar a origem da API (localhost:3000) em vez da origem atual
+            const API_ORIGIN = 'http://localhost:3000';
 
-        booksTbody.innerHTML = books.map(book => `
+            booksTbody.innerHTML = books.map(book => `
             <tr>
                 <td>
                     ${book.cover_image
                     ? `<img src="${API_ORIGIN}${book.cover_image}" 
                           alt="Capa de ${escapeHtml(book.title)}" 
                           style="width:50px;height:70px;object-fit:cover;border-radius:4px;"
-                          onerror="this.style.display='none'; this.parentNode.innerHTML='< style=\"width:50px;height:70px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;border-radius:4px;font-size:20px;\">
-                        `
-                    : '<div style="width:50px;height:70px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;border-radius:4px;font-size:20px;"></div>'}
+                          onerror="this.style.display='none'; this.parentNode.innerHTML='<div style=\"width:50px;height:70px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;border-radius:4px;font-size:20px;\"></div>`
+                    : '<div style="width:50px;height:70px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;border-radius:4px;font-size:20px;">📚</div>'}
                 </td>
                 <td><strong>${escapeHtml(book.title)}</strong></td>
                 <td>${escapeHtml(book.author || '-')}</td>
@@ -272,26 +276,27 @@ async function loadBooks() {
             </tr>
         `).join("");
 
-        // Eventos de editar
-        document.querySelectorAll('.btn-edit').forEach(btn => {
-            btn.addEventListener('click', () => editBook(btn.dataset.id));
-        });
+            // Eventos de editar
+            document.querySelectorAll('.btn-edit').forEach(btn => {
+                btn.addEventListener('click', () => editBook(btn.dataset.id));
+            });
 
-        // Eventos de excluir
-        document.querySelectorAll('.btn-delete').forEach(btn => {
-            btn.addEventListener('click', () => deleteBook(btn.dataset.id));
-        });
+            // Eventos de excluir
+            document.querySelectorAll('.btn-delete').forEach(btn => {
+                btn.addEventListener('click', () => deleteBook(btn.dataset.id));
+            });
 
-    } catch (error) {
-        console.error("Erro ao carregar livros:", error);
-        booksTbody.innerHTML = `
+        } catch (error) {
+            console.error("Erro ao carregar livros:", error);
+            booksTbody.innerHTML = `
             <tr>
                 <td colspan="8" style="text-align:center; padding:20px; color:red;">
                     Erro ao carregar livros
                 </td>
             </tr>`;
+        }
     }
-}
+
     // Inicialização
     loadBooks();
     if (document.getElementById('dashboard-page')?.classList.contains('active')) {
@@ -419,6 +424,173 @@ async function deleteBook(id) {
     }
 }
 
+// ================== MÓDULO DE GESTÃO DE ACESSO ==================
+async function loadPendingReaders() {
+    const pendingReadersTbody = document.getElementById('pending-readers-tbody');
+    if (!pendingReadersTbody) return;
+
+    try {
+        const readers = await apiRequest('/admin/pending-readers');
+
+        if (!readers || readers.length === 0) {
+            pendingReadersTbody.innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align:center; padding:20px;">
+                        Nenhum utilizador pendente de aprovação
+                    </td>
+                </tr>`;
+            return;
+        }
+
+        pendingReadersTbody.innerHTML = readers.map(reader => `
+            <tr>
+                <td><strong>${escapeHtml(reader.full_name)}</strong></td>
+                <td>${escapeHtml(reader.username)}</td>
+                <td>${escapeHtml(reader.email)}</td>
+                <td>${escapeHtml(reader.phone || '-')}</td>
+                <td>${escapeHtml(reader.address || '-')}</td>
+                <td>${new Date(reader.created_at).toLocaleDateString('pt-BR')}</td>
+                <td>
+                    <button class="btn-approve" data-id="${reader.id}">Aprovar</button>
+                    <button class="btn-reject" data-id="${reader.id}">Rejeitar</button>
+                </td>
+            </tr>
+        `).join('');
+
+        // Eventos dos botões
+        document.querySelectorAll('.btn-approve').forEach(btn => {
+            btn.addEventListener('click', () => approveReader(btn.dataset.id));
+        });
+
+        document.querySelectorAll('.btn-reject').forEach(btn => {
+            btn.addEventListener('click', () => rejectReader(btn.dataset.id));
+        });
+
+    } catch (error) {
+        console.error('Erro ao carregar utilizadores pendentes:', error);
+        pendingReadersTbody.innerHTML = `
+            <tr>
+                <td colspan="7" style="text-align:center; padding:20px; color:red;">
+                    Erro ao carregar utilizadores pendentes
+                </td>
+            </tr>`;
+    }
+}
+
+// Carregar utilizadores aprovados
+async function loadApprovedReaders() {
+    const approvedReadersTbody = document.getElementById('approved-readers-tbody');
+    if (!approvedReadersTbody) return;
+
+    try {
+        const readers = await apiRequest('/admin/approved-readers');
+
+        if (!readers || readers.length === 0) {
+            approvedReadersTbody.innerHTML = `
+                <tr>
+                    <td colspan="8" style="text-align:center; padding:20px;">
+                        Nenhum utilizador aprovado
+                    </td>
+                </tr>`;
+            return;
+        }
+
+        approvedReadersTbody.innerHTML = readers.map(reader => `
+            <tr>
+                <td><strong>${escapeHtml(reader.full_name)}</strong></td>
+                <td>${escapeHtml(reader.username)}</td>
+                <td>${escapeHtml(reader.email)}</td>
+                <td>${escapeHtml(reader.phone || '-')}</td>
+                <td>${escapeHtml(reader.address || '-')}</td>
+                <td>${new Date(reader.created_at).toLocaleDateString('pt-BR')}</td>
+                <td>${reader.approved_at ? new Date(reader.approved_at).toLocaleDateString('pt-BR') : '-'}</td>
+                <td>
+                    <button class="btn-suspend" data-id="${reader.id}">Suspender</button>
+                </td>
+            </tr>
+        `).join('');
+
+        // Eventos dos botões de suspensão
+        document.querySelectorAll('.btn-suspend').forEach(btn => {
+            btn.addEventListener('click', () => suspendReader(btn.dataset.id));
+        });
+
+    } catch (error) {
+        console.error('Erro ao carregar utilizadores aprovados:', error);
+        approvedReadersTbody.innerHTML = `
+            <tr>
+                <td colspan="8" style="text-align:center; padding:20px; color:red;">
+                    Erro ao carregar utilizadores aprovados
+                </td>
+            </tr>`;
+    }
+}
+
+// Função para aprovar utilizador
+async function approveReader(readerId) {
+    if (!confirm('Tem certeza que deseja aprovar este utilizador?')) {
+        return;
+    }
+
+    try {
+        const result = await apiRequest(`/admin/readers/${readerId}/approve`, {
+            method: 'PUT'
+        });
+
+        if (result) {
+            alert('Utilizador aprovado com sucesso!');
+            await loadPendingReaders();
+            await loadApprovedReaders();
+        }
+    } catch (error) {
+        console.error('Erro ao aprovar utilizador:', error);
+        alert('Erro ao aprovar utilizador: ' + error.message);
+    }
+}
+
+// Função para rejeitar utilizador
+async function rejectReader(readerId) {
+    if (!confirm('Tem certeza que deseja rejeitar este utilizador? Esta ação não pode ser desfeita.')) {
+        return;
+    }
+
+    try {
+        const result = await apiRequest(`/admin/readers/${readerId}/reject`, {
+            method: 'PUT'
+        });
+
+        if (result) {
+            alert('Utilizador rejeitado com sucesso!');
+            await loadPendingReaders();
+        }
+    } catch (error) {
+        console.error('Erro ao rejeitar utilizador:', error);
+        alert('Erro ao rejeitar utilizador: ' + error.message);
+    }
+}
+
+// Função para suspender utilizador
+async function suspendReader(readerId) {
+    if (!confirm('Tem certeza que deseja suspender o acesso deste utilizador?')) {
+        return;
+    }
+
+    try {
+        const result = await apiRequest(`/admin/readers/${readerId}/suspend`, {
+            method: 'PUT'
+        });
+
+        if (result) {
+            alert('Acesso do utilizador suspenso!');
+            await loadApprovedReaders();
+            await loadPendingReaders();
+        }
+    } catch (error) {
+        console.error('Erro ao suspender utilizador:', error);
+        alert('Erro ao suspender utilizador: ' + error.message);
+    }
+}
+
 // ================== MÓDULO DE LEITORES ==================
 async function loadReaders() {
     const readersTbody = document.getElementById('readers-tbody');
@@ -426,11 +598,11 @@ async function loadReaders() {
 
     try {
         const readers = await apiRequest('/readers');
-        
+
         if (!readers || readers.length === 0) {
             readersTbody.innerHTML = `
             <tr>
-                <td colspan="6" style="text-align:center; padding:20px;">
+                <td colspan="7" style="text-align:center; padding:20px;">
                     Nenhum leitor encontrado
                 </td>
             </tr>`;
@@ -445,18 +617,33 @@ async function loadReaders() {
                 <td>${escapeHtml(reader.address || '-')}</td>
                 <td>${new Date(reader.created_at).toLocaleDateString('pt-BR')}</td>
                 <td>
-                    <span class="status-badge ${reader.is_active ? 'active' : 'inactive'}">
-                        ${reader.is_active ? 'Ativo' : 'Inativo'}
+                    <span class="status-badge ${reader.is_approved ? 'active' : 'inactive'}">
+                        ${reader.is_approved ? 'Aprovado' : 'Pendente'}
                     </span>
+                </td>
+                <td>
+                    ${!reader.is_approved ? 
+                        `<button class="btn-approve" data-id="${reader.id}">Aprovar</button>` : 
+                        `<button class="btn-suspend" data-id="${reader.id}">Suspender</button>`
+                    }
                 </td>
             </tr>
         `).join('');
+
+        // Adicionar eventos aos botões
+        document.querySelectorAll('.btn-approve').forEach(btn => {
+            btn.addEventListener('click', () => approveReader(btn.dataset.id));
+        });
+
+        document.querySelectorAll('.btn-suspend').forEach(btn => {
+            btn.addEventListener('click', () => suspendReader(btn.dataset.id));
+        });
 
     } catch (error) {
         console.error('Erro ao carregar leitores:', error);
         readersTbody.innerHTML = `
         <tr>
-            <td colspan="6" style="text-align:center; padding:20px; color:red;">
+            <td colspan="7" style="text-align:center; padding:20px; color:red;">
                 Erro ao carregar leitores
             </td>
         </tr>`;
@@ -471,7 +658,7 @@ async function loadAnalytics() {
 
         // Carregar gráfico de categorias
         await loadCategoryChart();
-        
+
         // Carregar lista de livros populares
         loadPopularBooks(stats.top_borrowed_books || []);
 
@@ -555,6 +742,11 @@ async function loadAdminStats() {
         setText('stat-borrowed-books', stats.borrowed_books ?? 0);
         setText('stat-total-readers', stats.total_readers ?? 0);
         setText('stat-reservations', stats.reservations_count ?? 0);
+        
+        // Nova estatística: utilizadores pendentes
+        if (document.getElementById('stat-pending-readers')) {
+            setText('stat-pending-readers', stats.pending_readers ?? 0);
+        }
 
         // Render gráficos
         const topBooks = Array.isArray(stats.top_borrowed_books) ? stats.top_borrowed_books : [];
@@ -572,7 +764,7 @@ async function loadAdminStats() {
 function renderTopBooksList(topBooks) {
     const list = document.getElementById('topBooksList');
     if (!list) return;
-    
+
     if (!topBooks || topBooks.length === 0) {
         list.innerHTML = '<li style="padding:10px; text-align:center; color:#666;">Nenhum dado disponível</li>';
         return;
@@ -604,7 +796,7 @@ function renderTopBooksChart(topBooks) {
     const data = topBooks.map(b => b.times_borrowed || 0);
 
     const ctx = canvas.getContext('2d');
-    
+
     if (topBooksChartInstance) {
         topBooksChartInstance.destroy();
     }
@@ -625,7 +817,7 @@ function renderTopBooksChart(topBooks) {
             responsive: true,
             maintainAspectRatio: false,
             scales: {
-                y: { 
+                y: {
                     beginAtZero: true,
                     ticks: { stepSize: 1 }
                 }
@@ -640,7 +832,7 @@ function renderTopBooksChart(topBooks) {
 let trendsChartInstance = null;
 function renderTrendsChart(loansRaw, reservationsRaw) {
     if (typeof Chart === 'undefined') return;
-    
+
     const loansSeries = buildSeriesFromDays(loansRaw, 14);
     const reservationsSeries = buildSeriesFromDays(reservationsRaw, 14);
 
@@ -665,7 +857,7 @@ function renderTrendsChart(loansRaw, reservationsRaw) {
             labels,
             datasets: [
                 {
-                    label: '+lidos',
+                    label: 'Empréstimos',
                     data: loansData,
                     borderColor: 'rgba(54,162,235,0.9)',
                     backgroundColor: 'rgba(54,162,235,0.2)',
@@ -673,7 +865,7 @@ function renderTrendsChart(loansRaw, reservationsRaw) {
                     fill: true
                 },
                 {
-                    label: '-lidos',
+                    label: 'Reservas',
                     data: reservationsData,
                     borderColor: 'rgba(255,130,0,0.9)',
                     backgroundColor: 'rgba(255,130,0,0.15)',
@@ -685,11 +877,11 @@ function renderTrendsChart(loansRaw, reservationsRaw) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            scales: { 
-                y: { 
+            scales: {
+                y: {
                     beginAtZero: true,
                     ticks: { stepSize: 1 }
-                } 
+                }
             }
         }
     });
@@ -706,7 +898,7 @@ function buildSeriesFromDays(rawRows, days = 14) {
     const result = [];
     const today = new Date();
     const map = {};
-    
+
     (rawRows || []).forEach(r => {
         const d = new Date(r.day).toISOString().slice(0, 10);
         map[d] = (r.count != null) ? r.count : 0;
@@ -732,21 +924,20 @@ function escapeHtml(unsafe) {
 }
 
 // ================== EVENT LISTENERS GLOBAIS ==================
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     loadAdminProfile();
     // Botão de atualizar estatísticas
     const refreshBtn = document.getElementById('refresh-stats-btn');
     if (refreshBtn) {
-        refreshBtn.addEventListener('click', function() {
+        refreshBtn.addEventListener('click', function () {
             loadAdminStats();
-            
         });
     }
 });
 
 // Carregar estatísticas a cada 60 segundos se no dashboard
 let statsInterval = null;
-document.addEventListener('visibilitychange', function() {
+document.addEventListener('visibilitychange', function () {
     const dashboardPage = document.getElementById('dashboard-page');
     if (document.visibilityState === 'visible' && dashboardPage?.classList.contains('active')) {
         if (!statsInterval) {
@@ -782,17 +973,17 @@ async function loadAdminProfile() {
                     // Usar o full_name se disponível, caso contrário usar username
                     adminNameElement.textContent = data.user.full_name || data.user.username || 'Admin';
                 }
-                
+
                 // Opcional: salvar informações do usuário para uso posterior
                 localStorage.setItem('adminUser', JSON.stringify(data.user));
-                
+
                 return data.user;
             }
         }
     } catch (error) {
         console.error('Erro ao carregar perfil do admin:', error);
     }
-    
+
     // Fallback: usar informações do localStorage se disponível
     const savedUser = localStorage.getItem('adminUser');
     if (savedUser) {
@@ -807,12 +998,6 @@ async function loadAdminProfile() {
             console.error('Erro ao parsear usuário salvo:', e);
         }
     }
-    
-    return null;
-}
 
-// Função global para carregar livros (usada por outras funções)
-async function loadBooks() {
-    // Esta função será implementada pelo módulo principal
-    console.log('Carregando livros...');
+    return null;
 }
